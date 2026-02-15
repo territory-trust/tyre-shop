@@ -3,95 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Приймальник Шин</title>
+    <title>AI Приймальник Шин — Tyre Shop</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <style>
         :root { --bg: #0d0f12; --olive: #556b2f; --text: #d1d5db; --card-bg: #14171c; }
-        body { 
-            background: var(--bg); 
-            color: var(--text); 
-            font-family: sans-serif; 
-            padding: 20px; 
-            text-align: center; 
-            font-size: 16px; /* Комфортний розмір для читання */
-        }
-        .panel { 
-            background: var(--card-bg); 
-            padding: 25px; 
-            border-radius: 20px; 
-            border: 1px solid var(--olive); 
-            max-width: 600px; 
-            margin: auto; 
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5); /* Об'ємний ефект */
-        }
-        input[type="password"], input[type="number"] { 
-            width: 100%; 
-            padding: 15px; 
-            border-radius: 12px; 
-            background: #000; 
-            color: #fff; 
-            border: 1px solid #444; 
-            margin-bottom: 20px; 
-            box-sizing: border-box; 
-            font-size: 16px;
-        }
-        .file-upload-wrapper {
-            background: #0a0c0e;
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px dashed var(--olive);
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        .file-upload-wrapper label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #aaa;
-        }
-        input[type="file"] {
-            color: #fff;
-        }
-        .btn { 
-            background: linear-gradient(180deg, var(--olive) 0%, #3e4e22 100%); 
-            color: white; 
-            padding: 20px; 
-            width: 100%; 
-            border-radius: 15px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            margin-top: 10px;
-            margin-bottom: 10px; 
-            border: 1px solid #556b2f; 
-            font-size: 18px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 2px 2px rgba(255,255,255,0.2);
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-            transition: all 0.2s;
-        }
-        .btn:active {
-            transform: translateY(2px);
-            box-shadow: inset 0 4px 8px rgba(0,0,0,0.6);
-        }
-        #status { 
-            margin-top: 20px; 
-            background: #000; 
-            padding: 15px; 
-            border-radius: 12px; 
-            color: #00ff41; 
-            text-align: left; 
-            height: 250px; 
-            overflow-y: auto; 
-            font-family: monospace; 
-            font-size: 14px; 
-            border: 1px solid #222;
-        }
-        .back-link { display: block; margin-bottom: 20px; color: #888; text-decoration: none; font-size: 16px;}
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; text-align: center; font-size: 16px; }
+        .panel { background: var(--card-bg); padding: 25px; border-radius: 20px; border: 1px solid var(--olive); max-width: 600px; margin: auto; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+        input[type="password"], input[type="number"] { width: 100%; padding: 15px; border-radius: 12px; background: #000; color: #fff; border: 1px solid #444; margin-bottom: 20px; box-sizing: border-box; font-size: 16px; }
+        .file-upload-wrapper { background: #0a0c0e; padding: 15px; border-radius: 12px; border: 1px dashed var(--olive); margin-bottom: 15px; text-align: left; }
+        .file-upload-wrapper label { display: block; margin-bottom: 8px; font-weight: bold; color: #aaa; }
+        .btn { background: linear-gradient(180deg, var(--olive) 0%, #3e4e22 100%); color: white; padding: 20px; width: 100%; border-radius: 15px; font-weight: bold; cursor: pointer; margin-top: 10px; border: 1px solid #556b2f; font-size: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: 0.2s; }
+        .btn:active { transform: translateY(2px); box-shadow: inset 0 4px 8px rgba(0,0,0,0.6); }
+        #status { margin-top: 20px; background: #000; padding: 15px; border-radius: 12px; color: #00ff41; text-align: left; height: 250px; overflow-y: auto; font-family: monospace; font-size: 14px; border: 1px solid #222; }
+        .back-link { display: block; margin-bottom: 20px; color: #888; text-decoration: none; }
     </style>
 </head>
 <body>
 
-    <a href="dashboard.html" class="back-link">← Назад у Кабінет</a>
+    <a href="index.html" class="back-link">← На Головну</a>
 
     <div class="panel">
         <h2 style="color:var(--olive); text-transform: uppercase;">AI Приймальник Шин</h2>
@@ -100,11 +30,11 @@
         <input type="number" id="price" placeholder="Ціна продажу (грн)..." required>
 
         <div class="file-upload-wrapper">
-            <label>1. Фото протектора (стан):</label>
+            <label>1. Фото протектора:</label>
             <input type="file" id="photo1" accept="image/*">
         </div>
         <div class="file-upload-wrapper">
-            <label>2. Фото бренду (назва):</label>
+            <label>2. Фото бренду:</label>
             <input type="file" id="photo2" accept="image/*">
         </div>
         <div class="file-upload-wrapper">
@@ -112,22 +42,12 @@
             <input type="file" id="photo3" accept="image/*">
         </div>
 
-        <button class="btn" onclick="processTire()">ОНАЛІЗУВАТИ ТА ДОДАТИ</button>
-        <div id="status">> Очікування фотографій...</div>
+        <button class="btn" onclick="processTire()">АНАЛІЗУВАТИ ТА ОПУБЛІКУВАТИ</button>
+        <div id="status">> Готовий до роботи...</div>
     </div>
 
     <script>
         const sb = supabase.createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
-
-        // Функція для конвертації файлу у Base64 (необхідно для ІІ)
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = error => reject(error);
-            });
-        }
 
         function logStatus(msg, isError = false) {
             const statusBox = document.getElementById('status');
@@ -136,99 +56,80 @@
             statusBox.scrollTop = statusBox.scrollHeight;
         }
 
+        async function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function uploadToStorage(file, prefix) {
+            const fileName = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+            const { data, error } = await sb.storage.from('tyres').upload(fileName, file);
+            if (error) throw error;
+            const { data: urlData } = sb.storage.from('tyres').getPublicUrl(fileName);
+            return urlData.publicUrl;
+        }
+
         async function processTire() {
             const key = document.getElementById('apiKey').value;
             const price = document.getElementById('price').value;
-            const file1 = document.getElementById('photo1').files[0];
-            const file2 = document.getElementById('photo2').files[0];
-            const file3 = document.getElementById('photo3').files[0];
+            const f1 = document.getElementById('photo1').files[0];
+            const f2 = document.getElementById('photo2').files[0];
+            const f3 = document.getElementById('photo3').files[0];
 
-            if(!key) return logStatus("❌ Помилка: Вставте API ключ Gemini!", true);
-            if(!price) return logStatus("❌ Помилка: Вкажіть ціну товару!", true);
-            if(!file1 || !file2 || !file3) return logStatus("❌ Помилка: Завантажте всі 3 фотографії!", true);
+            if(!key || !price || !f1 || !f2 || !f3) return logStatus("❌ Заповніть всі поля та додайте 3 фото!", true);
 
-            logStatus("⏳ Підготовка фотографій...");
-            
             try {
-                // 1. Конвертуємо фотографії
-                const base64_1 = await fileToBase64(file1);
-                const base64_2 = await fileToBase64(file2);
-                const діbase64_3 = await fileToBase64(file3);
+                logStatus("⏳ Завантаження фото у хмару...");
+                const url1 = await uploadToStorage(f1, 'tread');
+                const url2 = await uploadToStorage(f2, 'brand');
+                const url3 = await uploadToStorage(f3, 'size');
+                logStatus("✅ Фото завантажено!");
 
-                // 2. Звернення до ІІ з 3-ма картинками
-                logStatus("🧠 ІІ аналізує протектор, бренд та розмір...");
-                
-                const promptText = `Ти - експерт з автомобільних шин. Проаналізуй ці 3 фотографії однієї вживаної шини. 
-                Визнач бренд, модель, розмір, сезон (Зимова/Літня/Всесезонна) та оціни залишок протектора (наприклад 'Близько 6мм' або 'Гарний стан').
-                Напиши привабливу назву (title) та маркетинговий опис (description) українською мовою. Опис має містити технічні характеристики та переваги.
-                ВАЖЛИВО: Поверни відповідь ВИКЛЮЧНО у форматі JSON без маркдауну, без блоків коду. 
-                Структура JSON: {"brand": "", "model": "", "size": "", "season": "", "tread_depth": "", "title": "", "description": ""}`;
+                logStatus("🧠 ІІ аналізує шину...");
+                const b1 = await fileToBase64(f1);
+                const b2 = await fileToBase64(f2);
+                const b3 = await fileToBase64(f3);
 
-                const payload = {
-                    contents: [{
-                        parts: [
-                            { text: promptText },
-                            { inline_data: { mime_type: file1.type, data: base64_1 } },
-                            { inline_data: { mime_type: file2.type, data: base64_2 } },
-                            { inline_data: { mime_type: file3.type, data: діbase64_3 } }
-                        ]
-                    }],
-                    generationConfig: { temperature: 0.2 } // Низька температура для точності даних
-                };
+                const promptText = `Проаналізуй 3 фото вживаної шини. Видай JSON: {"brand":"", "model":"", "size":"", "season":"", "tread_depth":"", "title":"", "description":""}. Мова: українська.`;
 
-                // Використовуємо модель, що підтримує Vision
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
                     method: "POST", 
                     headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: promptText },
+                                { inline_data: { mime_type: f1.type, data: b1 } },
+                                { inline_data: { mime_type: f2.type, data: b2 } },
+                                { inline_data: { mime_type: f3.type, data: b3 } }
+                            ]
+                        }]
+                    })
                 });
 
                 const data = await res.json();
-                
-                if(!res.ok) throw new Error(data.error.message || "Помилка API Gemini");
+                let ai = JSON.parse(data.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/gi, '').trim());
 
-                let rawText = data.candidates[0].content.parts[0].text;
-                // Очищаємо від можливих блоків markdown ```json ... ```
-                rawText = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
-                
-                const aiResult = JSON.parse(rawText);
-                logStatus(`✅ Розпізнано: ${aiResult.brand} ${aiResult.size}`);
+                let cat = ai.size.match(/R\d{2}/i)?.[0]?.toUpperCase() || "Інше";
 
-                // 3. Визначення категорії (витягуємо радіус, напр. з "175/65 R15" беремо "R15")
-                let radiusCategory = "Інше";
-                const radiusMatch = aiResult.size.match(/R\d{2}/i);
-                if(radiusMatch) {
-                    radiusCategory = radiusMatch[0].toUpperCase();
-                }
-
-                logStatus("💾 Збереження в базу даних (Supabase)...");
-
-                // 4. Збереження в Supabase. (ПОКИ ЩО зберігаємо без фотографій в базі, щоб не перевантажувати запит. Фото налаштуємо окремо)
-                const { error: dbError } = await sb.from('products').insert([{
-                    brand: aiResult.brand,
-                    model: aiResult.model,
-                    size: aiResult.size,
-                    season: aiResult.season,
-                    tread_depth: aiResult.tread_depth,
-                    title: aiResult.title,
-                    description: aiResult.description,
-                    price: parseFloat(price),
-                    category: radiusCategory,
-                    status: 'В наявності'
+                logStatus("💾 Збереження в базу...");
+                const { error: dbErr } = await sb.from('products').insert([{
+                    brand: ai.brand, model: ai.model, size: ai.size, 
+                    season: ai.season, tread_depth: ai.tread_depth,
+                    title: ai.title, description: ai.description,
+                    price: parseFloat(price), category: cat,
+                    image_url_1: url1, image_url_2: url2, image_url_3: url3
                 }]);
 
-                if(dbError) throw dbError;
+                if(dbErr) throw dbErr;
+                logStatus(`🎉 Успішно! Товар "${ai.title}" опубліковано.`);
 
-                logStatus(`🎉 Успішно! Товар "${aiResult.title}" додано до категорії ${radiusCategory}.`);
-                
-                // Очищення форми
-                document.getElementById('price').value = '';
-                document.getElementById('photo1').value = '';
-                document.getElementById('photo2').value = '';
-                document.getElementById('photo3').value = '';
-
-            } catch(error) {
-                logStatus(`❌ Помилка: ${error.message}`, true);
+            } catch(e) {
+                logStatus(`❌ Помилка: ${e.message}`, true);
             }
         }
     </script>
