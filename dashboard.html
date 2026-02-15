@@ -14,9 +14,9 @@
         .stat-card { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #333; text-align: center; }
         .stat-card span { display: block; font-size: 12px; color: #888; }
         .stat-card b { font-size: 18px; color: var(--olive); }
-        .item-card { background: var(--panel); border-radius: 12px; border: 1px solid #333; padding: 15px; margin-bottom: 10px; position: relative; }
-        .item-card.sold { opacity: 0.5; border-color: #222; }
-        .title { font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+        .item-card { background: var(--panel); border-radius: 12px; border: 1px solid #333; padding: 15px; margin-bottom: 10px; }
+        .item-card.sold { opacity: 0.4; border-color: #222; }
+        .title { font-weight: bold; font-size: 14px; margin-bottom: 5px; color: #fff; }
         .info { font-size: 12px; color: #aaa; margin-bottom: 10px; }
         .actions { display: flex; gap: 8px; }
         .btn { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 12px; }
@@ -28,7 +28,7 @@
 </head>
 <body>
 
-<div class="header"><h3>Панель Адміністратора</h3></div>
+<div class="header"><h3>Керування складом</h3></div>
 
 <div class="stats">
     <div class="stat-card"><span>В наявності</span><b id="active-count">0</b></div>
@@ -39,7 +39,6 @@
 
 <div class="danger-zone">
     <h4 style="margin:0; color:var(--red)">Очищення бази</h4>
-    <p style="font-size:11px; color:#888">Видалення провадиться назавжди.</p>
     <button class="btn btn-clean" onclick="cleanDb('sold')">ВИДАЛИТИ ТІЛЬКИ ПРОДАНІ</button>
     <button class="btn btn-clean" style="opacity:0.7" onclick="cleanDb('all')">ПОВНА ОЧИСТКА БАЗИ</button>
 </div>
@@ -63,7 +62,7 @@
                     <div class="title">${p.title}</div>
                     <div class="info">${p.size} | ${p.price} грн | ${p.status}</div>
                     <div class="actions">
-                        ${!isSold ? `<button class="btn btn-sold" onclick="markSold('${p.id}')">ПРОДАНО</button>` : '<span>✅ Продано</span>'}
+                        ${!isSold ? `<button class="btn btn-sold" onclick="markSold('${p.id}')">ПРОДАНО</button>` : '<span>✅ Продано (фото видалені)</span>'}
                         <button class="btn btn-del" onclick="deleteItem('${p.id}')">ВИДАЛИТИ</button>
                     </div>
                 </div>`;
@@ -75,7 +74,6 @@
     async function markSold(id) {
         if(!confirm("Відзначити як продано? Фото будуть видалені для економії місця.")) return;
         
-        // Получаем ссылки на фото перед удалением статуса
         const { data: p } = await sb.from('products').select('image_url_1, image_url_2, image_url_3').eq('id', id).single();
         
         const delImg = async (url) => {
@@ -103,10 +101,11 @@
     }
 
     async function cleanDb(mode) {
-        if(!confirm("Ви впевнені? Це видалить дані назавжди!")) return;
+        if(!confirm("Ця дія видалить дані назавжди. Продовжити?")) return;
         if(mode === 'sold') {
             await sb.from('products').delete().eq('status', 'Продано');
         } else {
+            // Удаляем всё
             await sb.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         }
         loadData();
