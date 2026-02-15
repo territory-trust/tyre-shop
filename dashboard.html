@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дашборд — Керування складом</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <style>
+        :root { --bg: #0a0c10; --panel: #14171c; --olive: #8fbc55; --text: #e5e7eb; --red: #ff4444; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
+        .header { text-align: center; color: var(--olive); text-transform: uppercase; margin-bottom: 20px; }
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #333; text-align: center; }
+        .stat-card span { display: block; font-size: 12px; color: #888; }
+        .stat-card b { font-size: 18px; color: var(--olive); }
+        .item-card { background: var(--panel); border-radius: 12px; border: 1px solid #333; padding: 15px; margin-bottom: 10px; position: relative; }
+        .item-card.sold { opacity: 0.5; border-color: #222; }
+        .title { font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+        .info { font-size: 12px; color: #aaa; margin-bottom: 10px; }
+        .actions { display: flex; gap: 8px; }
+        .btn { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .btn-sold { background: var(--olive); color: #000; }
+        .btn-del { background: transparent; color: var(--red); border: 1px solid var(--red); }
+        .danger-zone { margin-top: 30px; padding: 20px; border: 1px dashed var(--red); border-radius: 12px; background: rgba(255,68,68,0.05); }
+        .btn-clean { background: var(--red); color: white; width: 100%; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="header"><h3>Панель Адміністратора</h3></div>
+
+<div class="stats">
+    <div class="stat-card"><span>В наявності</span><b id="active-count">0</b></div>
+    <div class="stat-card"><span>Сума складу</span><b id="total-sum">0</b></div>
+</div>
+
+<div id="items-list"></div>
+
+<div class="danger-zone">
+    <h4 style="margin:0; color:var(--red)">Очищення бази</h4>
+    <p style="font-size:11px; color:#888">Видалення провадиться назавжди.</p>
+    <button class="btn btn-clean" onclick="cleanDb('sold')">ВИДАЛИТИ ТІЛЬКИ ПРОДАНІ</button>
+    <button class="btn btn-clean" style="opacity:0.7" onclick="cleanDb('all')">ПОВНА ОЧИСТКА БАЗИ</button>
+</div>
+
+<script>
+    const sb = supabase.createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
+
+    async function loadData() {
+        const { data: products } = await sb.from('products').select('*').order('created_at', {ascending: false});
+        const container = document.getElementById('items-list');
+        container.innerHTML = '';
+        
+        let sum = 0; let active = 0;
+
+        products.forEach(p => {
+            const isSold = p.status === 'Продано';
+            if(!isSold) { active++; sum += Number(p.price); }
+
+            container.innerHTML += `
+                <div class="item-card ${isSold ? 'sold' : ''}">
+                    <div class="title">${p.title}</div>
+                    <div class="info">${p.size} | ${p.price} грн | ${p.status}</div>
+                    <div class="actions">
+                        ${!isSold ? `<button class="btn btn-sold" onclick="markSold('${p.id}')">ПРОДАНО</button>` : '<span>✅ Продано</span>'}
+                        <button class="btn btn-del" onclick="deleteItem('${p.id}')">ВИДАЛИТИ</button>
+                    </div>
+                </div>`;
+        });
+        document.getElementById('active-count').innerText = active;
+        document.getElementById('total-sum').innerText = sum + ' грн';
+    }
+
+    async function markSold(id) {
+        if(!confirm("Відзначити як продано? Фото будуть видалені для економії місця.")) return;
+        
+        // Получаем ссылки на фото перед удалением статуса
+        const { data: p } = await sb.from('products').select('image_url_1, image_url_2, image_url_3').eq('id', id).single();
+        
+        const delImg = async (url) => {
+            if(url) {
+                const name = url.split('/').pop();
+                await sb.storage.from('tyres').remove([name]);
+            }
+        };
+
+        await delImg(p.image_url_1); await delImg(p.image_url_2); await delImg(p.image_url_3);
+
+        await sb.from('products').update({ 
+            status: 'Продано', 
+            image_url_1: null, image_url_2: null, image_url_3: null 
+        }).eq('id', id);
+        
+        loadData();
+    }
+
+    async function deleteItem(id) {
+        if(confirm("Видалити цей товар назавжди?")) {
+            await sb.from('products').delete().eq('id', id);
+            loadData();
+        }
+    }
+
+    async function cleanDb(mode) {
+        if(!confirm("Ви впевнені? Це видалить дані назавжди!")) return;
+        if(mode === 'sold') {
+            await sb.from('products').delete().eq('status', 'Продано');
+        } else {
+            await sb.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        loadData();
+    }
+
+    loadData();
+</script>
+</body>
+</html>
