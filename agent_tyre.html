@@ -32,13 +32,13 @@
         <input type="number" id="price" placeholder="Наприклад: 1500">
 
         <label>1. Фото протектора:</label>
-        <input type="file" id="photo1" accept="image/*" capture="camera">
+        <input type="file" id="photo1" accept="image/*">
 
         <label>2. Фото бренду/моделі:</label>
-        <input type="file" id="photo2" accept="image/*" capture="camera">
+        <input type="file" id="photo2" accept="image/*">
 
         <label>3. Фото розміру (маркування):</label>
-        <input type="file" id="photo3" accept="image/*" capture="camera">
+        <input type="file" id="photo3" accept="image/*">
 
         <button class="btn" onclick="processTire()">АНАЛІЗУВАТИ ТА ДОДАТИ</button>
     </div>
@@ -53,7 +53,6 @@
         s.style.display = 'block';
         s.style.borderLeftColor = isError ? '#ff4444' : '#8fbc55';
         s.innerText += msg + '\n';
-        console.log(msg);
     }
 
     async function fileToBase64(file) {
@@ -78,7 +77,7 @@
         }
 
         document.getElementById('status').innerText = '';
-        logStatus("⏳ Завантаження фото у сховище...");
+        logStatus("⏳ Завантаження фото у хмару...");
 
         try {
             const upload = async (file, tag) => {
@@ -122,7 +121,7 @@
                 image_url_1: u1, image_url_2: u2, image_url_3: u3, status: 'В наявності'
             }]);
 
-            logStatus("🎉 Товар успішно додано з фотографіями!");
+            logStatus("🎉 Товар успішно додано!");
         } catch(e) {
             logStatus("❌ Помилка: " + e.message, true);
         }
