@@ -2,136 +2,131 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Приймальник Шин — Tyre Shop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Прийом Шини — Tyre Agent</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <style>
-        :root { --bg: #0d0f12; --olive: #556b2f; --text: #d1d5db; --card-bg: #14171c; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; text-align: center; font-size: 16px; }
-        .panel { background: var(--card-bg); padding: 25px; border-radius: 20px; border: 1px solid var(--olive); max-width: 600px; margin: auto; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
-        input[type="password"], input[type="number"] { width: 100%; padding: 15px; border-radius: 12px; background: #000; color: #fff; border: 1px solid #444; margin-bottom: 20px; box-sizing: border-box; font-size: 16px; }
-        .file-upload-wrapper { background: #0a0c0e; padding: 15px; border-radius: 12px; border: 1px dashed var(--olive); margin-bottom: 15px; text-align: left; }
-        .file-upload-wrapper label { display: block; margin-bottom: 8px; font-weight: bold; color: #aaa; }
-        .btn { background: linear-gradient(180deg, var(--olive) 0%, #3e4e22 100%); color: white; padding: 20px; width: 100%; border-radius: 15px; font-weight: bold; cursor: pointer; margin-top: 10px; border: 1px solid #556b2f; font-size: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: 0.2s; }
-        .btn:active { transform: translateY(2px); box-shadow: inset 0 4px 8px rgba(0,0,0,0.6); }
-        #status { margin-top: 20px; background: #000; padding: 15px; border-radius: 12px; color: #00ff41; text-align: left; height: 250px; overflow-y: auto; font-family: monospace; font-size: 14px; border: 1px solid #222; }
-        .back-link { display: block; margin-bottom: 20px; color: #888; text-decoration: none; }
+        :root { --bg: #0a0c10; --panel: #14171c; --olive: #8fbc55; --text: #e5e7eb; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; font-size: 16px; }
+        .container { max-width: 500px; margin: 0 auto; }
+        h2 { color: var(--olive); text-align: center; text-transform: uppercase; letter-spacing: 2px; }
+        .card { background: var(--panel); padding: 20px; border-radius: 16px; border: 1px solid #333; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        label { display: block; margin: 15px 0 5px; color: #888; font-size: 14px; }
+        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--olive); }
+        .btn { background: linear-gradient(180deg, #556b2f 0%, #3e4e22 100%); color: #fff; border: none; width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 0 #283315; }
+        .btn:active { transform: translateY(2px); box-shadow: none; }
+        #status { margin-top: 20px; padding: 15px; border-radius: 8px; background: #000; font-size: 13px; border-left: 4px solid var(--olive); white-space: pre-wrap; display: none; }
     </style>
 </head>
 <body>
 
-    <a href="index.html" class="back-link">← На Головну</a>
+<div class="container">
+    <h2>Додати Шину</h2>
+    <div class="card">
+        <label>API Ключ Gemini:</label>
+        <input type="password" id="apiKey" placeholder="Вставте ключ сюди...">
 
-    <div class="panel">
-        <h2 style="color:var(--olive); text-transform: uppercase;">AI Приймальник Шин</h2>
-        
-        <input type="password" id="apiKey" placeholder="Вставте Google API Key...">
-        <input type="number" id="price" placeholder="Ціна продажу (грн)..." required>
+        <label>Ціна продажу (грн):</label>
+        <input type="number" id="price" placeholder="Наприклад: 1500">
 
-        <div class="file-upload-wrapper">
-            <label>1. Фото протектора:</label>
-            <input type="file" id="photo1" accept="image/*">
-        </div>
-        <div class="file-upload-wrapper">
-            <label>2. Фото бренду:</label>
-            <input type="file" id="photo2" accept="image/*">
-        </div>
-        <div class="file-upload-wrapper">
-            <label>3. Фото маркування (розмір):</label>
-            <input type="file" id="photo3" accept="image/*">
-        </div>
+        <label>1. Фото протектора:</label>
+        <input type="file" id="photo1" accept="image/*" capture="camera">
 
-        <button class="btn" onclick="processTire()">АНАЛІЗУВАТИ ТА ОПУБЛІКУВАТИ</button>
-        <div id="status">> Готовий до роботи...</div>
+        <label>2. Фото бренду/моделі:</label>
+        <input type="file" id="photo2" accept="image/*" capture="camera">
+
+        <label>3. Фото розміру (маркування):</label>
+        <input type="file" id="photo3" accept="image/*" capture="camera">
+
+        <button class="btn" onclick="processTire()">АНАЛІЗУВАТИ ТА ДОДАТИ</button>
     </div>
+    <div id="status"></div>
+</div>
 
-    <script>
-        const sb = supabase.createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
+<script>
+    const sb = supabase.createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
 
-        function logStatus(msg, isError = false) {
-            const statusBox = document.getElementById('status');
-            const color = isError ? '#ff4444' : '#00ff41';
-            statusBox.innerHTML += `<br><span style="color:${color}">${msg}</span>`;
-            statusBox.scrollTop = statusBox.scrollHeight;
+    function logStatus(msg, isError = false) {
+        const s = document.getElementById('status');
+        s.style.display = 'block';
+        s.style.borderLeftColor = isError ? '#ff4444' : '#8fbc55';
+        s.innerText += msg + '\n';
+        console.log(msg);
+    }
+
+    async function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    async function processTire() {
+        const key = document.getElementById('apiKey').value;
+        const price = document.getElementById('price').value;
+        const f1 = document.getElementById('photo1').files[0];
+        const f2 = document.getElementById('photo2').files[0];
+        const f3 = document.getElementById('photo3').files[0];
+
+        if(!key || !price || !f1 || !f2 || !f3) {
+            alert("Заповніть всі поля та виберіть 3 фото!");
+            return;
         }
 
-        async function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = error => reject(error);
+        document.getElementById('status').innerText = '';
+        logStatus("⏳ Завантаження фото у сховище...");
+
+        try {
+            const upload = async (file, tag) => {
+                const name = `${Date.now()}_${tag}.jpg`;
+                const { data, error } = await sb.storage.from('tyres').upload(name, file);
+                if (error) throw error;
+                return sb.storage.from('tyres').getPublicUrl(name).data.publicUrl;
+            };
+
+            const u1 = await upload(f1, 'tread');
+            const u2 = await upload(f2, 'brand');
+            const u3 = await upload(f3, 'size');
+
+            logStatus("🧠 ІІ аналізує шини...");
+            const b1 = await fileToBase64(f1);
+            const b2 = await fileToBase64(f2);
+            const b3 = await fileToBase64(f3);
+
+            const prompt = `Аналізуй 3 фото шини. Поверни JSON: {"brand":"","model":"","size":"","season":"","tread_depth":"","title":"","description":""}. Мова: українська.`;
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ contents: [{ parts: [
+                    { text: prompt },
+                    { inline_data: { mime_type: f1.type, data: b1 } },
+                    { inline_data: { mime_type: f2.type, data: b2 } },
+                    { inline_data: { mime_type: f3.type, data: b3 } }
+                ]}]})
             });
+
+            const aiData = await res.json();
+            const ai = JSON.parse(aiData.candidates[0].content.parts[0].text.replace(/```json|```/gi, ''));
+            const radius = ai.size.match(/R\d{2}/i)?.[0]?.toUpperCase() || "Інше";
+
+            logStatus("💾 Збереження в базу...");
+            await sb.from('products').insert([{
+                brand: ai.brand, model: ai.model, size: ai.size, season: ai.season,
+                tread_depth: ai.tread_depth, title: ai.title, description: ai.description,
+                price: parseFloat(price), category: radius,
+                image_url_1: u1, image_url_2: u2, image_url_3: u3, status: 'В наявності'
+            }]);
+
+            logStatus("🎉 Товар успішно додано з фотографіями!");
+        } catch(e) {
+            logStatus("❌ Помилка: " + e.message, true);
         }
-
-        async function uploadToStorage(file, prefix) {
-            const fileName = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-            const { data, error } = await sb.storage.from('tyres').upload(fileName, file);
-            if (error) throw error;
-            const { data: urlData } = sb.storage.from('tyres').getPublicUrl(fileName);
-            return urlData.publicUrl;
-        }
-
-        async function processTire() {
-            const key = document.getElementById('apiKey').value;
-            const price = document.getElementById('price').value;
-            const f1 = document.getElementById('photo1').files[0];
-            const f2 = document.getElementById('photo2').files[0];
-            const f3 = document.getElementById('photo3').files[0];
-
-            if(!key || !price || !f1 || !f2 || !f3) return logStatus("❌ Заповніть всі поля та додайте 3 фото!", true);
-
-            try {
-                logStatus("⏳ Завантаження фото у хмару...");
-                const url1 = await uploadToStorage(f1, 'tread');
-                const url2 = await uploadToStorage(f2, 'brand');
-                const url3 = await uploadToStorage(f3, 'size');
-                logStatus("✅ Фото завантажено!");
-
-                logStatus("🧠 ІІ аналізує шину...");
-                const b1 = await fileToBase64(f1);
-                const b2 = await fileToBase64(f2);
-                const b3 = await fileToBase64(f3);
-
-                const promptText = `Проаналізуй 3 фото вживаної шини. Видай JSON: {"brand":"", "model":"", "size":"", "season":"", "tread_depth":"", "title":"", "description":""}. Мова: українська.`;
-
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
-                    method: "POST", 
-                    headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                { text: promptText },
-                                { inline_data: { mime_type: f1.type, data: b1 } },
-                                { inline_data: { mime_type: f2.type, data: b2 } },
-                                { inline_data: { mime_type: f3.type, data: b3 } }
-                            ]
-                        }]
-                    })
-                });
-
-                const data = await res.json();
-                let ai = JSON.parse(data.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/gi, '').trim());
-
-                let cat = ai.size.match(/R\d{2}/i)?.[0]?.toUpperCase() || "Інше";
-
-                logStatus("💾 Збереження в базу...");
-                const { error: dbErr } = await sb.from('products').insert([{
-                    brand: ai.brand, model: ai.model, size: ai.size, 
-                    season: ai.season, tread_depth: ai.tread_depth,
-                    title: ai.title, description: ai.description,
-                    price: parseFloat(price), category: cat,
-                    image_url_1: url1, image_url_2: url2, image_url_3: url3
-                }]);
-
-                if(dbErr) throw dbErr;
-                logStatus(`🎉 Успішно! Товар "${ai.title}" опубліковано.`);
-
-            } catch(e) {
-                logStatus(`❌ Помилка: ${e.message}`, true);
-            }
-        }
-    </script>
+    }
+</script>
 </body>
 </html>
