@@ -91,7 +91,7 @@
             const u2 = await upload(f2, 'brand');
             const u3 = await upload(f3, 'size');
 
-            logStatus("🧠 ІІ аналізує шини...");
+            logStatus("🧠 ІІ аналізує дані...");
             const b1 = await fileToBase64(f1);
             const b2 = await fileToBase64(f2);
             const b3 = await fileToBase64(f3);
@@ -110,16 +110,20 @@
             });
 
             const aiData = await res.json();
+            if (!aiData.candidates) throw new Error("Gemini API Error");
+            
             const ai = JSON.parse(aiData.candidates[0].content.parts[0].text.replace(/```json|```/gi, ''));
             const radius = ai.size.match(/R\d{2}/i)?.[0]?.toUpperCase() || "Інше";
 
             logStatus("💾 Збереження в базу...");
-            await sb.from('products').insert([{
+            const { error: dbErr } = await sb.from('products').insert([{
                 brand: ai.brand, model: ai.model, size: ai.size, season: ai.season,
                 tread_depth: ai.tread_depth, title: ai.title, description: ai.description,
                 price: parseFloat(price), category: radius,
                 image_url_1: u1, image_url_2: u2, image_url_3: u3, status: 'В наявності'
             }]);
+            
+            if(dbErr) throw dbErr;
 
             logStatus("🎉 Товар успішно додано!");
         } catch(e) {
