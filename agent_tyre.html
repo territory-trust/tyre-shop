@@ -9,21 +9,30 @@
     <style>
         :root { --bg: #0a0c10; --panel: #14171c; --olive: #8fbc55; --text: #e5e7eb; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; }
-        .card { background: var(--panel); padding: 20px; border-radius: 16px; border: 1px solid #333; max-width: 500px; margin: auto; }
-        label { display: block; margin: 15px 0 5px; color: #888; font-size: 14px; }
-        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
-        .btn { background: linear-gradient(180deg, #556b2f 0%, #3e4e22 100%); color: #fff; border: none; width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 0 #283315; }
-        #status { margin-top: 20px; padding: 15px; border-radius: 8px; background: #000; font-size: 13px; border-left: 4px solid var(--olive); white-space: pre-wrap; display: none; }
+        .card { background: var(--panel); padding: 20px; border-radius: 16px; border: 1px solid #333; max-width: 500px; margin: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { color: var(--olive); text-align: center; margin-top: 0; text-transform: uppercase; font-size: 20px; }
+        label { display: block; margin: 15px 0 5px; color: #888; font-size: 13px; }
+        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; margin-bottom: 5px; font-size: 16px; outline: none; }
+        input:focus { border-color: var(--olive); }
+        .btn { background: linear-gradient(180deg, #556b2f 0%, #3e4e22 100%); color: #fff; border: none; width: 100%; padding: 18px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 16px; box-shadow: 0 4px 0 #283315; transition: 0.2s; }
+        .btn:active { transform: translateY(2px); box-shadow: none; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #status { margin-top: 20px; padding: 15px; border-radius: 8px; background: #000; font-size: 13px; border-left: 4px solid var(--olive); white-space: pre-wrap; display: none; line-height: 1.5; }
+        .success-flash { border-left-color: #00ff41 !important; background: #001a05 !important; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="color:var(--olive); text-align:center;">НОВИЙ ТОВАР</h2>
-    <input type="password" id="apiKey" placeholder="Google API Key">
-    <input type="number" id="price" placeholder="Ціна (грн)">
+    <h2>➕ Новий товар</h2>
     
-    <label>1. Фото протектора:</label>
+    <label>Google API Key (зберігається):</label>
+    <input type="password" id="apiKey" placeholder="Вставте ключ">
+    
+    <label>Ціна продажу (грн):</label>
+    <input type="number" id="price" placeholder="Наприклад: 1450">
+    
+    <label>1. Фото протектора (головне):</label>
     <input type="file" id="p1" accept="image/*">
     
     <label>2. Фото бренду:</label>
@@ -32,17 +41,20 @@
     <label>3. Фото розміру:</label>
     <input type="file" id="p3" accept="image/*">
     
-    <button class="btn" onclick="start()">ДОДАТИ В МАГАЗИН</button>
+    <button class="btn" id="mainBtn" onclick="start()">ДОДАТИ В МАГАЗИН</button>
     <div id="status"></div>
 </div>
 
 <script>
     const sb = supabase.createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
 
-    function log(msg) {
+    function log(msg, isError = false) {
         const s = document.getElementById('status');
         s.style.display = 'block';
+        if(isError) s.style.borderLeftColor = '#ff4444';
+        else s.style.borderLeftColor = '#8fbc55';
         s.innerText += msg + '\n';
+        s.scrollTop = s.scrollHeight;
     }
 
     async function toB64(file) {
@@ -54,21 +66,25 @@
     }
 
     async function start() {
+        const btn = document.getElementById('mainBtn');
+        const statusBox = document.getElementById('status');
         const key = document.getElementById('apiKey').value;
         const pr = document.getElementById('price').value;
         const f1 = document.getElementById('p1').files[0];
         const f2 = document.getElementById('p2').files[0];
         const f3 = document.getElementById('p3').files[0];
 
-        if(!key || !pr || !f1) return alert("Заповніть дані!");
+        if(!key || !pr || !f1) return alert("Вкажіть ціну та виберіть фото протектора!");
 
-        document.getElementById('status').innerText = '';
-        log("⏳ Завантаження фото...");
+        btn.disabled = true;
+        statusBox.innerText = '';
+        log("⏳ Початок завантаження...");
 
         try {
             const up = async (f, t) => {
                 const n = `${Date.now()}_${t}.jpg`;
-                await sb.storage.from('tyres').upload(n, f);
+                const { error } = await sb.storage.from('tyres').upload(n, f);
+                if(error) throw error;
                 return sb.storage.from('tyres').getPublicUrl(n).data.publicUrl;
             };
 
@@ -76,16 +92,14 @@
             const u2 = f2 ? await up(f2, '2') : null;
             const u3 = f3 ? await up(f3, '3') : null;
 
-            log("🧠 Аналіз ІІ (створення опису)...");
+            log("🧠 Аналіз ІІ та створення опису...");
             const b1 = await toB64(f1);
             
-            const prompt = `Ти - професійний копірайтер у сфері авто. Напиши детальний опис Б/В шини на основі фото. 
-            Зроби 3 блоки: 
-            1. Заголовок (Бренд + Модель + головна фішка). 
-            2. Переваги (безпека, гальмування, комфорт). 
-            3. Стан (оціни візуально). 
-            Текст має бути переконливим, мінімум 5 речень. Мова: українська.
-            Формат JSON: {"brand":"","model":"","size":"","season":"","tread_depth":"","title":"","description":""}`;
+            const prompt = `Ти професійний експерт з шин. Опиши цю шину. 
+            Напиши довгий та переконливий опис (мінімум 6 речень). 
+            Обов'язково згадай безпеку, комфорт та зчеплення. 
+            Поверни ВИНЯТКОВО JSON: {"brand":"","model":"","size":"","season":"","tread_depth":"","title":"","description":""}. 
+            Мова: українська.`;
 
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
                 method: "POST", headers: {"Content-Type":"application/json"},
@@ -93,19 +107,42 @@
             });
 
             const d = await res.json();
-            const ai = JSON.parse(d.candidates[0].content.parts[0].text.replace(/```json|```/gi, ''));
+            let raw = d.candidates[0].content.parts[0].text;
+            raw = raw.replace(/```json|```/gi, '').trim();
+            
+            const ai = JSON.parse(raw);
             const rad = ai.size.match(/R\d{2}/i)?.[0]?.toUpperCase() || "Інше";
 
-            log("💾 Збереження...");
-            await sb.from('products').insert([{
+            log("💾 Збереження в базу...");
+            const { error: dbErr } = await sb.from('products').insert([{
                 brand: ai.brand, model: ai.model, size: ai.size, season: ai.season,
                 tread_depth: ai.tread_depth, title: ai.title, description: ai.description,
                 price: parseFloat(pr), category: rad,
                 image_url_1: u1, image_url_2: u2, image_url_3: u3, status: 'В наявності'
             }]);
 
-            log("✅ Готово! Товар на сайті.");
-        } catch(e) { log("❌ Помилка: " + e.message); }
+            if(dbErr) throw dbErr;
+
+            // УСПІХ: Очищуємо поля для наступного товару
+            log("✅ УСПІШНО ДОДАНО!");
+            statusBox.classList.add('success-flash');
+            
+            // Очищуємо файли та ціну
+            document.getElementById('price').value = '';
+            document.getElementById('p1').value = '';
+            document.getElementById('p2').value = '';
+            document.getElementById('p3').value = '';
+            
+            setTimeout(() => {
+                statusBox.innerText = "Готовий до наступної шини...";
+                statusBox.classList.remove('success-flash');
+                btn.disabled = false;
+            }, 3000);
+
+        } catch(e) { 
+            log("❌ Помилка: " + e.message, true);
+            btn.disabled = false;
+        }
     }
 </script>
 </body>
