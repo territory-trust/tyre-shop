@@ -3,132 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Прийом Шини — Tyre Agent</title>
+    <title>Додати Шину — Tyre Agent</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <style>
         :root { --bg: #0a0c10; --panel: #14171c; --olive: #8fbc55; --text: #e5e7eb; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; font-size: 16px; }
-        .container { max-width: 500px; margin: 0 auto; }
-        h2 { color: var(--olive); text-align: center; text-transform: uppercase; letter-spacing: 2px; }
-        .card { background: var(--panel); padding: 20px; border-radius: 16px; border: 1px solid #333; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; }
+        .card { background: var(--panel); padding: 20px; border-radius: 16px; border: 1px solid #333; max-width: 500px; margin: auto; }
         label { display: block; margin: 15px 0 5px; color: #888; font-size: 14px; }
-        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--olive); }
-        .btn { background: linear-gradient(180deg, #556b2f 0%, #3e4e22 100%); color: #fff; border: none; width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 0 #283315; }
-        .btn:active { transform: translateY(2px); box-shadow: none; }
+        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
+        .btn { background: linear-gradient(180deg, #556b2f 0%, #3e4e22 100%); color: #fff; border: none; width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 0 #283315; }
         #status { margin-top: 20px; padding: 15px; border-radius: 8px; background: #000; font-size: 13px; border-left: 4px solid var(--olive); white-space: pre-wrap; display: none; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Додати Шину</h2>
-    <div class="card">
-        <label>API Ключ Gemini:</label>
-        <input type="password" id="apiKey" placeholder="Вставте ключ сюди...">
-
-        <label>Ціна продажу (грн):</label>
-        <input type="number" id="price" placeholder="Наприклад: 1500">
-
-        <label>1. Фото протектора:</label>
-        <input type="file" id="photo1" accept="image/*">
-
-        <label>2. Фото бренду/моделі:</label>
-        <input type="file" id="photo2" accept="image/*">
-
-        <label>3. Фото розміру (маркування):</label>
-        <input type="file" id="photo3" accept="image/*">
-
-        <button class="btn" onclick="processTire()">АНАЛІЗУВАТИ ТА ДОДАТИ</button>
-    </div>
+<div class="card">
+    <h2 style="color:var(--olive); text-align:center;">НОВИЙ ТОВАР</h2>
+    <input type="password" id="apiKey" placeholder="Google API Key">
+    <input type="number" id="price" placeholder="Ціна (грн)">
+    
+    <label>1. Фото протектора:</label>
+    <input type="file" id="p1" accept="image/*">
+    
+    <label>2. Фото бренду:</label>
+    <input type="file" id="p2" accept="image/*">
+    
+    <label>3. Фото розміру:</label>
+    <input type="file" id="p3" accept="image/*">
+    
+    <button class="btn" onclick="start()">ДОДАТИ В МАГАЗИН</button>
     <div id="status"></div>
 </div>
 
 <script>
     const sb = supabase.createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
 
-    function logStatus(msg, isError = false) {
+    function log(msg) {
         const s = document.getElementById('status');
         s.style.display = 'block';
-        s.style.borderLeftColor = isError ? '#ff4444' : '#8fbc55';
         s.innerText += msg + '\n';
     }
 
-    async function fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = error => reject(error);
+    async function toB64(file) {
+        return new Promise(r => {
+            const rd = new FileReader();
+            rd.readAsDataURL(file);
+            rd.onload = () => r(rd.result.split(',')[1]);
         });
     }
 
-    async function processTire() {
+    async function start() {
         const key = document.getElementById('apiKey').value;
-        const price = document.getElementById('price').value;
-        const f1 = document.getElementById('photo1').files[0];
-        const f2 = document.getElementById('photo2').files[0];
-        const f3 = document.getElementById('photo3').files[0];
+        const pr = document.getElementById('price').value;
+        const f1 = document.getElementById('p1').files[0];
+        const f2 = document.getElementById('p2').files[0];
+        const f3 = document.getElementById('p3').files[0];
 
-        if(!key || !price || !f1 || !f2 || !f3) {
-            alert("Заповніть всі поля та виберіть 3 фото!");
-            return;
-        }
+        if(!key || !pr || !f1) return alert("Заповніть дані!");
 
         document.getElementById('status').innerText = '';
-        logStatus("⏳ Завантаження фото у хмару...");
+        log("⏳ Завантаження фото...");
 
         try {
-            const upload = async (file, tag) => {
-                const name = `${Date.now()}_${tag}.jpg`;
-                const { data, error } = await sb.storage.from('tyres').upload(name, file);
-                if (error) throw error;
-                return sb.storage.from('tyres').getPublicUrl(name).data.publicUrl;
+            const up = async (f, t) => {
+                const n = `${Date.now()}_${t}.jpg`;
+                await sb.storage.from('tyres').upload(n, f);
+                return sb.storage.from('tyres').getPublicUrl(n).data.publicUrl;
             };
 
-            const u1 = await upload(f1, 'tread');
-            const u2 = await upload(f2, 'brand');
-            const u3 = await upload(f3, 'size');
+            const u1 = await up(f1, '1');
+            const u2 = f2 ? await up(f2, '2') : null;
+            const u3 = f3 ? await up(f3, '3') : null;
 
-            logStatus("🧠 ІІ аналізує дані...");
-            const b1 = await fileToBase64(f1);
-            const b2 = await fileToBase64(f2);
-            const b3 = await fileToBase64(f3);
-
-            const prompt = `Аналізуй 3 фото шини. Поверни JSON: {"brand":"","model":"","size":"","season":"","tread_depth":"","title":"","description":""}. Мова: українська.`;
+            log("🧠 Аналіз ІІ (створення опису)...");
+            const b1 = await toB64(f1);
+            
+            const prompt = `Ти - професійний копірайтер у сфері авто. Напиши детальний опис Б/В шини на основі фото. 
+            Зроби 3 блоки: 
+            1. Заголовок (Бренд + Модель + головна фішка). 
+            2. Переваги (безпека, гальмування, комфорт). 
+            3. Стан (оціни візуально). 
+            Текст має бути переконливим, мінімум 5 речень. Мова: українська.
+            Формат JSON: {"brand":"","model":"","size":"","season":"","tread_depth":"","title":"","description":""}`;
 
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ contents: [{ parts: [
-                    { text: prompt },
-                    { inline_data: { mime_type: f1.type, data: b1 } },
-                    { inline_data: { mime_type: f2.type, data: b2 } },
-                    { inline_data: { mime_type: f3.type, data: b3 } }
-                ]}]})
+                method: "POST", headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: f1.type, data: b1 } }] }] })
             });
 
-            const aiData = await res.json();
-            if (!aiData.candidates) throw new Error("Gemini API Error");
-            
-            const ai = JSON.parse(aiData.candidates[0].content.parts[0].text.replace(/```json|```/gi, ''));
-            const radius = ai.size.match(/R\d{2}/i)?.[0]?.toUpperCase() || "Інше";
+            const d = await res.json();
+            const ai = JSON.parse(d.candidates[0].content.parts[0].text.replace(/```json|```/gi, ''));
+            const rad = ai.size.match(/R\d{2}/i)?.[0]?.toUpperCase() || "Інше";
 
-            logStatus("💾 Збереження в базу...");
-            const { error: dbErr } = await sb.from('products').insert([{
+            log("💾 Збереження...");
+            await sb.from('products').insert([{
                 brand: ai.brand, model: ai.model, size: ai.size, season: ai.season,
                 tread_depth: ai.tread_depth, title: ai.title, description: ai.description,
-                price: parseFloat(price), category: radius,
+                price: parseFloat(pr), category: rad,
                 image_url_1: u1, image_url_2: u2, image_url_3: u3, status: 'В наявності'
             }]);
-            
-            if(dbErr) throw dbErr;
 
-            logStatus("🎉 Товар успішно додано!");
-        } catch(e) {
-            logStatus("❌ Помилка: " + e.message, true);
-        }
+            log("✅ Готово! Товар на сайті.");
+        } catch(e) { log("❌ Помилка: " + e.message); }
     }
 </script>
 </body>
