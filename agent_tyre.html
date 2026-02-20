@@ -8,141 +8,148 @@
     <script src="config.js"></script>
     <style>
         :root { --bg: #0a0c10; --panel: #14171c; --olive: #8fbc55; --text: #e5e7eb; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; }
-        .card { background: var(--panel); padding: 20px; border-radius: 16px; border: 1px solid #333; max-width: 500px; margin: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; font-size: 16px; }
+        .nav-top { display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav-btn { flex: 1; background: #222; color: #fff; padding: 12px; border-radius: 10px; text-align: center; text-decoration: none; font-weight: bold; border: 1px solid #333; box-shadow: 0 4px 0 #111; }
+        .nav-btn:active { transform: translateY(2px); box-shadow: none; }
+        .card { background: var(--panel); padding: 20px; border-radius: 16px; border: 1px solid #333; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         h2 { color: var(--olive); text-align: center; margin-top: 0; text-transform: uppercase; font-size: 20px; }
-        label { display: block; margin: 15px 0 5px; color: #888; font-size: 13px; }
-        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; margin-bottom: 5px; font-size: 16px; outline: none; }
+        label { display: block; margin: 15px 0 5px; color: #888; font-size: 14px; }
+        input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; outline: none; font-size: 16px; }
         input:focus { border-color: var(--olive); }
+        .file-label { display: block; background: #000; border: 1px dashed var(--olive); padding: 15px; text-align: center; border-radius: 8px; color: var(--olive); cursor: pointer; margin-bottom: 10px; font-weight: bold; }
+        input[type="file"] { display: none; }
         .btn { background: linear-gradient(180deg, #556b2f 0%, #3e4e22 100%); color: #fff; border: none; width: 100%; padding: 18px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 16px; box-shadow: 0 4px 0 #283315; transition: 0.2s; }
         .btn:active { transform: translateY(2px); box-shadow: none; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        #status { margin-top: 20px; padding: 15px; border-radius: 8px; background: #000; font-size: 13px; border-left: 4px solid var(--olive); white-space: pre-wrap; display: none; line-height: 1.5; }
-        .success-flash { border-left-color: #00ff41 !important; background: #001a05 !important; }
+        #status { margin-top: 20px; padding: 15px; border-radius: 8px; background: #000; font-size: 14px; border-left: 4px solid var(--olive); white-space: pre-wrap; display: none; }
     </style>
 </head>
 <body>
 
+<div class="nav-top">
+    <a href="dashboard.html" class="nav-btn">🔙 В Кабінет</a>
+    <a href="index.html" class="nav-btn">🏪 В Магазин</a>
+</div>
+
 <div class="card">
     <h2>➕ Новий товар</h2>
     
-    <label>Google API Key (зберігається):</label>
+    <label>Google API Key:</label>
     <input type="password" id="apiKey" placeholder="Вставте ключ">
     
-    <label>Ціна продажу (грн):</label>
-    <input type="number" id="price" placeholder="Наприклад: 1450">
+    <label>Ціна продажу (грн): <br><small style="color:#666">Залиште порожнім, щоб ІІ оцінив сам</small></label>
+    <input type="number" id="price" placeholder="Наприклад: 1500">
     
-    <label>1. Фото протектора (головне):</label>
-    <input type="file" id="p1" accept="image/*">
+    <label>1. Фото кількості (шт):</label>
+    <label class="file-label" id="l1"><input type="file" id="p1" accept="image/*" onchange="updLbl('l1')">📸 Скільки шин у продажу?</label>
     
-    <label>2. Фото бренду:</label>
-    <input type="file" id="p2" accept="image/*">
+    <label>2. Фото розміру (маркування):</label>
+    <label class="file-label" id="l2"><input type="file" id="p2" accept="image/*" onchange="updLbl('l2')">📸 Фото розміру</label>
+
+    <label>3. Фото бренду/моделі:</label>
+    <label class="file-label" id="l3"><input type="file" id="p3" accept="image/*" onchange="updLbl('l3')">📸 Фото бренду</label>
+
+    <label>4. Фото протектора (ГОЛОВНЕ):</label>
+    <label class="file-label" id="l4"><input type="file" id="p4" accept="image/*" onchange="updLbl('l4')">📸 Фото протектора</label>
     
-    <label>3. Фото розміру:</label>
-    <input type="file" id="p3" accept="image/*">
-    
-    <button class="btn" id="mainBtn" onclick="start()">ДОДАТИ В МАГАЗИН</button>
+    <button class="btn" id="mainBtn" onclick="start()">АНАЛІЗ ТА ПУБЛІКАЦІЯ</button>
     <div id="status"></div>
 </div>
 
 <script>
     const sb = supabase.createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
 
-    function log(msg, isError = false) {
+    // Відновлюємо ключ
+    window.onload = () => {
+        const savedKey = localStorage.getItem('gemini_key');
+        if(savedKey) document.getElementById('apiKey').value = savedKey;
+    };
+
+    function updLbl(id) { document.getElementById(id).style.background = '#1a2e1a'; document.getElementById(id).innerHTML = '✅ Фото завантажено'; }
+
+    function log(msg, isErr = false) {
         const s = document.getElementById('status');
-        s.style.display = 'block';
-        if(isError) s.style.borderLeftColor = '#ff4444';
-        else s.style.borderLeftColor = '#8fbc55';
+        s.style.display = 'block'; s.style.borderLeftColor = isErr ? '#ff4444' : '#8fbc55';
         s.innerText += msg + '\n';
         s.scrollTop = s.scrollHeight;
     }
 
-    async function toB64(file) {
-        return new Promise(r => {
-            const rd = new FileReader();
-            rd.readAsDataURL(file);
-            rd.onload = () => r(rd.result.split(',')[1]);
-        });
-    }
+    async function toB64(f) { return new Promise(r => { const rd = new FileReader(); rd.readAsDataURL(f); rd.onload = () => r(rd.result.split(',')[1]); }); }
 
     async function start() {
         const btn = document.getElementById('mainBtn');
-        const statusBox = document.getElementById('status');
-        const key = document.getElementById('apiKey').value;
-        const pr = document.getElementById('price').value;
-        const f1 = document.getElementById('p1').files[0];
-        const f2 = document.getElementById('p2').files[0];
-        const f3 = document.getElementById('p3').files[0];
+        const k = document.getElementById('apiKey').value;
+        let pr = document.getElementById('price').value;
+        const fQty = document.getElementById('p1').files[0];
+        const fSize = document.getElementById('p2').files[0];
+        const fBrand = document.getElementById('p3').files[0];
+        const fTread = document.getElementById('p4').files[0];
 
-        if(!key || !pr || !f1) return alert("Вкажіть ціну та виберіть фото протектора!");
+        if(!k || !fTread) return alert("Введіть ключ та обов'язково фото протектора!");
+        localStorage.setItem('gemini_key', k); // Зберігаємо ключ для Вітрини
+        localStorage.setItem('is_admin', 'true');
 
-        btn.disabled = true;
-        statusBox.innerText = '';
-        log("⏳ Початок завантаження...");
+        btn.disabled = true; document.getElementById('status').innerText = '';
+        log("⏳ Завантаження фото...");
 
         try {
             const up = async (f, t) => {
+                if(!f) return null;
                 const n = `${Date.now()}_${t}.jpg`;
-                const { error } = await sb.storage.from('tyres').upload(n, f);
-                if(error) throw error;
+                await sb.storage.from('tyres').upload(n, f);
                 return sb.storage.from('tyres').getPublicUrl(n).data.publicUrl;
             };
 
-            const u1 = await up(f1, '1');
-            const u2 = f2 ? await up(f2, '2') : null;
-            const u3 = f3 ? await up(f3, '3') : null;
+            const u4 = await up(fTread, 'tread'); // Головне
+            const u1 = await up(fQty, 'qty');
+            const u2 = await up(fSize, 'size');
+            const u3 = await up(fBrand, 'brand');
 
-            log("🧠 Аналіз ІІ та створення опису...");
-            const b1 = await toB64(f1);
+            log("🧠 Аналіз ІІ...");
             
-            const prompt = `Ти професійний експерт з шин. Опиши цю шину. 
-            Напиши довгий та переконливий опис (мінімум 6 речень). 
-            Обов'язково згадай безпеку, комфорт та зчеплення. 
-            Поверни ВИНЯТКОВО JSON: {"brand":"","model":"","size":"","season":"","tread_depth":"","title":"","description":""}. 
-            Мова: українська.`;
+            // Збираємо фото для ІІ
+            const parts = [{ text: `Ти експерт з оцінки б/в шин. Проаналізуй фото. 
+            Поверни JSON: {"brand":"", "size":"", "season":"", "tread_depth":"", "quantity":"Кількість шт. на 1 фото (напр. Комплект 4 шт, Пара 2 шт, 1 шт)", "specs":"Короткі тех. характеристики (знос, стан)", "benefits":"Яка вигода для клієнта (безпека, комфорт)", "rec_price": "Оціночна ринкова ціна за весь об'єм у грн (тільки цифра)"}. Мова: українська. Без форматування markdown.` }];
+            
+            if(fQty) parts.push({ inline_data: { mime_type: fQty.type, data: await toB64(fQty) } });
+            if(fSize) parts.push({ inline_data: { mime_type: fSize.type, data: await toB64(fSize) } });
+            if(fBrand) parts.push({ inline_data: { mime_type: fBrand.type, data: await toB64(fBrand) } });
+            parts.push({ inline_data: { mime_type: fTread.type, data: await toB64(fTread) } });
 
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${k}`, {
                 method: "POST", headers: {"Content-Type":"application/json"},
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: f1.type, data: b1 } }] }] })
+                body: JSON.stringify({ contents: [{ parts: parts }] })
             });
 
             const d = await res.json();
-            let raw = d.candidates[0].content.parts[0].text;
-            raw = raw.replace(/```json|```/gi, '').trim();
-            
+            const raw = d.candidates[0].content.parts[0].text.replace(/```json|```/gi, '').trim();
             const ai = JSON.parse(raw);
-            const rad = ai.size.match(/R\d{2}/i)?.[0]?.toUpperCase() || "Інше";
+            
+            const rad = (ai.size || '').match(/R\d{2}/i)?.[0]?.toUpperCase() || "Інше";
+            
+            // Логіка ціни
+            if(!pr) {
+                const conf = confirm(`🤖 ІІ рекомендує ціну: ${ai.rec_price} грн.\nЗберегти цю ціну?`);
+                pr = conf ? ai.rec_price : prompt("Введіть свою ціну (грн):", ai.rec_price);
+            }
 
-            log("💾 Збереження в базу...");
-            const { error: dbErr } = await sb.from('products').insert([{
-                brand: ai.brand, model: ai.model, size: ai.size, season: ai.season,
-                tread_depth: ai.tread_depth, title: ai.title, description: ai.description,
+            log("💾 Збереження...");
+            const title = `${ai.size} | ${ai.brand} | ${ai.season} | ${ai.quantity}`;
+
+            await sb.from('products').insert([{
+                brand: ai.brand, size: ai.size, season: ai.season, tread_depth: ai.tread_depth, 
+                quantity: ai.quantity, specs: ai.specs, benefits: ai.benefits, title: title,
                 price: parseFloat(pr), category: rad,
-                image_url_1: u1, image_url_2: u2, image_url_3: u3, status: 'В наявності'
+                image_url_1: u4, image_url_2: u1, image_url_3: u2, image_url_4: u3, status: 'В наявності'
             }]);
 
-            if(dbErr) throw dbErr;
-
-            // УСПІХ: Очищуємо поля для наступного товару
-            log("✅ УСПІШНО ДОДАНО!");
-            statusBox.classList.add('success-flash');
-            
-            // Очищуємо файли та ціну
+            log("✅ УСПІШНО! Можна додавати наступну.");
             document.getElementById('price').value = '';
-            document.getElementById('p1').value = '';
-            document.getElementById('p2').value = '';
-            document.getElementById('p3').value = '';
-            
-            setTimeout(() => {
-                statusBox.innerText = "Готовий до наступної шини...";
-                statusBox.classList.remove('success-flash');
-                btn.disabled = false;
-            }, 3000);
-
-        } catch(e) { 
-            log("❌ Помилка: " + e.message, true);
-            btn.disabled = false;
-        }
+            document.querySelectorAll('input[type=file]').forEach(i => i.value = '');
+            document.querySelectorAll('.file-label').forEach((l, i) => { l.style.background = '#000'; l.innerHTML = `📸 Вибрати фото ${i+1}`; });
+            setTimeout(() => btn.disabled = false, 2000);
+        } catch(e) { log("❌ Помилка: " + e.message, true); btn.disabled = false; }
     }
 </script>
 </body>
