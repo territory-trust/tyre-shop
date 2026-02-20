@@ -127,6 +127,15 @@
             const imgJson = JSON.stringify(imgs).replace(/"/g, '&quot;');
             const badge = parseFloat(p.tread_depth) > 7 ? '<div class="badge">🔥 Стан нової</div>' : '';
             
+            // Нова логіка для виводу тексту
+            let descHtml = '';
+            if (p.specs || p.benefits) {
+                descHtml = (p.specs ? `<b>Характеристики:</b> ${p.specs}<br><br>` : '') + 
+                           (p.benefits ? `<b>Переваги:</b> ${p.benefits}` : '');
+            } else {
+                descHtml = p.description || '';
+            }
+
             g.innerHTML += `
                 <div class="card">
                     ${badge}
@@ -138,7 +147,7 @@
                     <div class="title">${p.title}</div>
                     <div class="price">${p.price} грн</div>
                     <div class="desc-box">
-                        <div class="desc-text" id="desc-${p.id}">${p.description || ''}</div>
+                        <div class="desc-text" id="desc-${p.id}">${descHtml}</div>
                         <span class="expand" onclick="tgDesc('desc-${p.id}', this)">Розгорнути деталі ⬇</span>
                     </div>
                     <button class="btn-buy" onclick="openOrder('${p.id}', '${p.title}', ${p.price})">ЗАМОВИТИ</button>
