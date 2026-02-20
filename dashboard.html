@@ -3,93 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Дашборд — Керування складом</title>
+    <title>Панель управління — Tyre Shop</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="config.js"></script>
     <style>
         :root { --bg: #0a0c10; --panel: #14171c; --olive: #8fbc55; --text: #e5e7eb; --red: #ff4444; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
-        .header { text-align: center; color: var(--olive); text-transform: uppercase; margin-bottom: 20px; }
-        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .stat-card { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #333; text-align: center; }
-        .stat-card span { display: block; font-size: 12px; color: #888; }
-        .stat-card b { font-size: 18px; color: var(--olive); }
-        .item-card { background: var(--panel); border-radius: 12px; border: 1px solid #333; padding: 15px; margin-bottom: 10px; }
-        .item-card.sold { opacity: 0.4; border-color: #222; }
-        .title { font-weight: bold; font-size: 14px; margin-bottom: 5px; color: #fff; }
-        .info { font-size: 12px; color: #aaa; margin-bottom: 10px; }
-        .actions { display: flex; gap: 8px; }
-        .btn { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 12px; }
-        .btn-sold { background: var(--olive); color: #000; }
-        .btn-del { background: transparent; color: var(--red); border: 1px solid var(--red); }
-        .danger-zone { margin-top: 30px; padding: 20px; border: 1px dashed var(--red); border-radius: 12px; background: rgba(255,68,68,0.05); }
-        .btn-clean { background: var(--red); color: white; width: 100%; margin-top: 10px; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; font-size: 14px;}
+        
+        .top-nav { display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav-link { flex: 1; background: #222; color: #fff; padding: 12px; border-radius: 10px; text-align: center; text-decoration: none; font-weight: bold; border: 1px solid #333; box-shadow: 0 4px 0 #111; }
+        .nav-link:active { transform: translateY(2px); box-shadow: none; }
+        
+        .tabs { display: flex; border-bottom: 2px solid #333; margin-bottom: 20px; overflow-x: auto; white-space: nowrap; }
+        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; color: #888; }
+        .tab.active { color: var(--olive); border-bottom: 3px solid var(--olive); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .card { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #333; margin-bottom: 12px; }
+        .card-header { font-weight: bold; color: #fff; margin-bottom: 8px; font-size: 15px; line-height: 1.3; }
+        .card-info { font-size: 13px; color: #aaa; margin-bottom: 10px; line-height: 1.4; }
+        
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;}
+        .stat-box { background: #000; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #222; }
+        .stat-box b { display: block; font-size: 22px; color: var(--olive); margin-top: 5px; }
+        .chart-container { background: #000; border: 1px solid #222; border-radius: 10px; padding: 10px; margin-bottom: 15px; }
+        
+        .btn { padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; width: 100%; font-size: 13px; margin-top: 5px;}
+        .btn-green { background: var(--olive); color: #000; }
+        .btn-red { background: transparent; color: var(--red); border: 1px solid var(--red); }
+        
+        .filters { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; }
+        select { background: #000; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 8px; outline: none;}
+        .price-edit { background: #000; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 8px; width: 100px; margin-right: 10px; font-weight: bold; }
+        .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;}
     </style>
 </head>
 <body>
 
-<div class="header"><h3>Керування складом</h3></div>
-
-<div class="stats">
-    <div class="stat-card"><span>В наявності</span><b id="active-count">0</b></div>
-    <div class="stat-card"><span>Сума складу</span><b id="total-sum">0</b></div>
+<div class="top-nav">
+    <a href="index.html" class="nav-link">🏪 МАГАЗИН</a>
+    <a href="agent_tyre.html" class="nav-link">➕ ДОДАТИ ТОВАР</a>
 </div>
 
-<div id="items-list"></div>
+<div class="tabs">
+    <div class="tab active" onclick="switchTab('orders', this)">🔔 Замовлення</div>
+    <div class="tab" onclick="switchTab('stock', this)">📦 Склад</div>
+    <div class="tab" onclick="switchTab('stats', this)">📊 Статистика</div>
+</div>
 
-<div class="danger-zone">
-    <h4 style="margin:0; color:var(--red)">Очищення бази</h4>
-    <button class="btn btn-clean" onclick="cleanDb('sold')">ВИДАЛИТИ ТІЛЬКИ ПРОДАНІ</button>
-    <button class="btn btn-clean" style="opacity:0.7" onclick="cleanDb('all')">ПОВНА ОЧИСТКА БАЗИ</button>
+<div id="orders" class="tab-content active"><div id="orders-list">Завантаження...</div></div>
+
+<div id="stock" class="tab-content">
+    <div class="filters">
+        <select id="f-season" onchange="applyFilters()"><option value="">Всі сезони</option><option value="Зима">Зима</option><option value="Літо">Літо</option></select>
+        <select id="f-size" onchange="applyFilters()"><option value="">Всі розміри</option></select>
+    </div>
+    <div id="stock-list"></div>
+</div>
+
+<div id="stats" class="tab-content">
+    <div class="stat-grid" id="stats-grid"></div>
+    <div class="chart-container"><canvas id="brandChart"></canvas></div>
+    <div class="chart-container"><canvas id="sizeChart"></canvas></div>
 </div>
 
 <script>
     const sb = supabase.createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
+    let allProducts = [];
+
+    function switchTab(id, el) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(id).classList.add('active'); el.classList.add('active');
+    }
 
     async function loadData() {
-        const { data: products } = await sb.from('products').select('*').order('created_at', {ascending: false});
-        const container = document.getElementById('items-list');
-        container.innerHTML = '';
+        const [ordRes, prodRes] = await Promise.all([
+            sb.from('orders').select('*').order('created_at', {ascending: false}),
+            sb.from('products').select('*').order('created_at', {ascending: false})
+        ]);
+        allProducts = prodRes.data || [];
         
-        let sum = 0; let active = 0;
-        if(products) {
-            products.forEach(p => {
-                const isSold = p.status === 'Продано';
-                if(!isSold) { active++; sum += Number(p.price); }
-
-                container.innerHTML += `
-                    <div class="item-card ${isSold ? 'sold' : ''}">
-                        <div class="title">${p.title}</div>
-                        <div class="info">${p.size} | ${p.price} грн | ${p.status}</div>
-                        <div class="actions">
-                            ${!isSold ? `<button class="btn btn-sold" onclick="markSold('${p.id}')">ПРОДАНО</button>` : '<span>✅ Продано (фото видалені)</span>'}
-                            <button class="btn btn-del" onclick="deleteItem('${p.id}')">ВИДАЛИТИ</button>
-                        </div>
-                    </div>`;
-            });
-        }
-        document.getElementById('active-count').innerText = active;
-        document.getElementById('total-sum').innerText = sum + ' грн';
+        renderOrders(ordRes.data || []);
+        populateFilters(); applyFilters();
+        renderStats(ordRes.data || []);
     }
 
-    async function markSold(id) {
-        if(!confirm("Відзначити як продано? Фото будуть видалені для економії місця.")) return;
-        const { data: p } = await sb.from('products').select('image_url_1, image_url_2, image_url_3').eq('id', id).single();
+    /* Замовлення */
+    function renderOrders(orders) {
+        const box = document.getElementById('orders-list'); box.innerHTML = '';
+        const active = orders.filter(o => o.status === 'Новий');
+        if(active.length === 0) return box.innerHTML = '<div class="card" style="text-align:center">Немає нових замовлень</div>';
+        
+        active.forEach(o => {
+            box.innerHTML += `
+                <div class="card">
+                    <div class="card-header">🛒 ${o.product_title}</div>
+                    <div class="card-info">
+                        <b>Клієнт:</b> ${o.customer_name} (${o.customer_phone})<br>
+                        <b>Доставка:</b> ${o.delivery} | <b>Оплата:</b> ${o.payment}<br>
+                        💰 Сума: <b style="color:var(--olive); font-size:16px">${o.price} грн</b>
+                    </div>
+                    <button class="btn btn-green" onclick="completeOrder('${o.id}', '${o.product_id}')">✅ ВИКОНАНО (Продано)</button>
+                </div>`;
+        });
+    }
+
+    async function completeOrder(oId, pId) {
+        if(!confirm("Підтвердити виконання?")) return;
+        await sb.from('orders').update({ status: 'Виконано' }).eq('id', oId);
+        markSold(pId, false); // Без підтвердження, бо вже підтвердили замовлення
+    }
+
+    /* Склад */
+    function populateFilters() {
+        const sizes = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+        const szSelect = document.getElementById('f-size');
+        sizes.forEach(s => szSelect.innerHTML += `<option value="${s}">${s}</option>`);
+    }
+
+    function applyFilters() {
+        const sz = document.getElementById('f-size').value;
+        const se = document.getElementById('f-season').value;
+        let filtered = allProducts.filter(p => p.status === 'В наявності');
+        if(sz) filtered = filtered.filter(p => p.category === sz);
+        if(se) filtered = filtered.filter(p => (p.season||'').includes(se));
+        
+        const box = document.getElementById('stock-list'); box.innerHTML = '';
+        filtered.forEach(p => {
+            box.innerHTML += `
+                <div class="card">
+                    <div class="card-header">${p.title}</div>
+                    <div class="card-info">Залишок: ${p.tread_depth} | Характеристики: ${p.specs}</div>
+                    <div class="flex-row">
+                        <input type="number" id="pr-${p.id}" class="price-edit" value="${p.price}">
+                        <button class="btn btn-green" style="width:auto; padding:10px" onclick="updPrice('${p.id}')">💾 Зберегти ціну</button>
+                    </div>
+                    <button class="btn btn-red" onclick="markSold('${p.id}', true)">🏷 Відзначити як ПРОДАНО (Офлайн)</button>
+                </div>`;
+        });
+    }
+
+    async function updPrice(id) {
+        const newPr = document.getElementById(`pr-${id}`).value;
+        await sb.from('products').update({ price: newPr }).eq('id', id);
+        alert("Ціну оновлено!"); loadData();
+    }
+
+    async function markSold(id, ask = true) {
+        if(ask && !confirm("Відзначити як продано? Фото будуть видалені для економії місця, але статистика збережеться.")) return;
+        
+        // Видаляємо фото зі Storage, залишаємо текст для статистики
+        const p = allProducts.find(x => x.id === id);
         const delImg = async (url) => { if(url) await sb.storage.from('tyres').remove([url.split('/').pop()]); };
-        await delImg(p.image_url_1); await delImg(p.image_url_2); await delImg(p.image_url_3);
-        await sb.from('products').update({ status: 'Продано', image_url_1: null, image_url_2: null, image_url_3: null }).eq('id', id);
+        await delImg(p.image_url_1); await delImg(p.image_url_2); await delImg(p.image_url_3); await delImg(p.image_url_4);
+        
+        await sb.from('products').update({ status: 'Продано', image_url_1: null, image_url_2: null, image_url_3: null, image_url_4: null }).eq('id', id);
         loadData();
     }
 
-    async function deleteItem(id) {
-        if(confirm("Видалити цей товар назавжди?")) { await sb.from('products').delete().eq('id', id); loadData(); }
-    }
+    /* Статистика */
+    let chart1, chart2;
+    function renderStats(orders) {
+        const soldProds = allProducts.filter(p => p.status === 'Продано');
+        const activeProds = allProducts.filter(p => p.status === 'В наявності');
+        
+        let activeSum = 0; activeProds.forEach(p => activeSum += Number(p.price));
+        let soldSum = 0; orders.filter(o => o.status === 'Виконано').forEach(o => soldSum += Number(o.price));
+        soldProds.forEach(p => { if(!orders.find(o => o.product_id === p.id)) soldSum += Number(p.price); }); // офлайн продажі
 
-    async function cleanDb(mode) {
-        if(!confirm("Ця дія видалить дані назавжди. Продовжити?")) return;
-        if(mode === 'sold') await sb.from('products').delete().eq('status', 'Продано');
-        else await sb.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        loadData();
+        document.getElementById('stats-grid').innerHTML = `
+            <div class="stat-box">Товарів шт.<b>${activeProds.length}</b></div>
+            <div class="stat-box">Сума складу<b>${activeSum} грн</b></div>
+            <div class="stat-box" style="border-color:var(--olive)">Продано шт.<b>${soldProds.length}</b></div>
+            <div class="stat-box" style="border-color:var(--olive)">Заробіток<b>${soldSum} грн</b></div>
+        `;
+
+        // Графіки
+        const brands = {}; const sizes = {};
+        soldProds.forEach(p => {
+            brands[p.brand] = (brands[p.brand] || 0) + 1;
+            sizes[p.category] = (sizes[p.category] || 0) + 1;
+        });
+
+        if(chart1) chart1.destroy(); if(chart2) chart2.destroy();
+        
+        chart1 = new Chart(document.getElementById('brandChart'), {
+            type: 'pie',
+            data: { labels: Object.keys(brands), datasets: [{ data: Object.values(brands), backgroundColor: ['#8fbc55','#556b2f','#444','#666','#888'] }] },
+            options: { plugins: { title: { display: true, text: 'Продажі за брендами', color: '#fff' }, legend: { labels: { color: '#bbb' } } } }
+        });
+
+        chart2 = new Chart(document.getElementById('sizeChart'), {
+            type: 'bar',
+            data: { labels: Object.keys(sizes), datasets: [{ label: 'Продано шт.', data: Object.values(sizes), backgroundColor: '#8fbc55' }] },
+            options: { plugins: { title: { display: true, text: 'Продажі за розмірами', color: '#fff' }, legend: { display: false } }, scales: { y: { ticks: { color: '#bbb' } }, x: { ticks: { color: '#bbb' } } } }
+        });
     }
 
     loadData();
