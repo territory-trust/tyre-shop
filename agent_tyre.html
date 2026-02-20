@@ -15,7 +15,7 @@
         .card { background: var(--panel); padding: 20px; border-radius: 16px; border: 1px solid #333; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         h2 { color: var(--olive); text-align: center; margin-top: 0; text-transform: uppercase; font-size: 20px; }
         label { display: block; margin: 15px 0 5px; color: #888; font-size: 14px; }
-        input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; outline: none; font-size: 16px; }
+        input[type="number"], input[type="password"] { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; outline: none; font-size: 16px; }
         input:focus { border-color: var(--olive); }
         .file-label { display: block; background: #000; border: 1px dashed var(--olive); padding: 15px; text-align: center; border-radius: 8px; color: var(--olive); cursor: pointer; margin-bottom: 10px; font-weight: bold; }
         input[type="file"] { display: none; }
@@ -42,16 +42,20 @@
     <input type="number" id="price" placeholder="Наприклад: 1500">
     
     <label>1. Фото кількості (шт):</label>
-    <label class="file-label" id="l1"><input type="file" id="p1" accept="image/*" onchange="updLbl('l1')">📸 Скільки шин у продажу?</label>
+    <input type="file" id="p1" accept="image/*" onchange="updLbl('l1')">
+    <label class="file-label" id="l1" for="p1">📸 Скільки шин у продажу?</label>
     
     <label>2. Фото розміру (маркування):</label>
-    <label class="file-label" id="l2"><input type="file" id="p2" accept="image/*" onchange="updLbl('l2')">📸 Фото розміру</label>
+    <input type="file" id="p2" accept="image/*" onchange="updLbl('l2')">
+    <label class="file-label" id="l2" for="p2">📸 Фото розміру</label>
 
     <label>3. Фото бренду/моделі:</label>
-    <label class="file-label" id="l3"><input type="file" id="p3" accept="image/*" onchange="updLbl('l3')">📸 Фото бренду</label>
+    <input type="file" id="p3" accept="image/*" onchange="updLbl('l3')">
+    <label class="file-label" id="l3" for="p3">📸 Фото бренду</label>
 
     <label>4. Фото протектора (ГОЛОВНЕ):</label>
-    <label class="file-label" id="l4"><input type="file" id="p4" accept="image/*" onchange="updLbl('l4')">📸 Фото протектора</label>
+    <input type="file" id="p4" accept="image/*" onchange="updLbl('l4')">
+    <label class="file-label" id="l4" for="p4">📸 Фото протектора</label>
     
     <button class="btn" id="mainBtn" onclick="start()">АНАЛІЗ ТА ПУБЛІКАЦІЯ</button>
     <div id="status"></div>
@@ -60,13 +64,16 @@
 <script>
     const sb = supabase.createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
 
-    // Відновлюємо ключ
     window.onload = () => {
         const savedKey = localStorage.getItem('gemini_key');
         if(savedKey) document.getElementById('apiKey').value = savedKey;
     };
 
-    function updLbl(id) { document.getElementById(id).style.background = '#1a2e1a'; document.getElementById(id).innerHTML = '✅ Фото завантажено'; }
+    function updLbl(id) { 
+        const lbl = document.getElementById(id);
+        lbl.style.background = '#1a2e1a'; 
+        lbl.innerHTML = '✅ Фото завантажено'; 
+    }
 
     function log(msg, isErr = false) {
         const s = document.getElementById('status');
@@ -86,8 +93,8 @@
         const fBrand = document.getElementById('p3').files[0];
         const fTread = document.getElementById('p4').files[0];
 
-        if(!k || !fTread) return alert("Введіть ключ та обов'язково фото протектора!");
-        localStorage.setItem('gemini_key', k); // Зберігаємо ключ для Вітрини
+        if(!k || !fTread) return alert("Введіть ключ та обов'язково фото протектора (Головне)!");
+        localStorage.setItem('gemini_key', k);
         localStorage.setItem('is_admin', 'true');
 
         btn.disabled = true; document.getElementById('status').innerText = '';
@@ -97,20 +104,19 @@
             const up = async (f, t) => {
                 if(!f) return null;
                 const n = `${Date.now()}_${t}.jpg`;
-                await sb.storage.from('tyres').upload(n, f);
+                const { error } = await sb.storage.from('tyres').upload(n, f);
+                if (error) throw error;
                 return sb.storage.from('tyres').getPublicUrl(n).data.publicUrl;
             };
 
-            const u4 = await up(fTread, 'tread'); // Головне
+            const u4 = await up(fTread, 'tread'); 
             const u1 = await up(fQty, 'qty');
             const u2 = await up(fSize, 'size');
             const u3 = await up(fBrand, 'brand');
 
             log("🧠 Аналіз ІІ...");
             
-            // Збираємо фото для ІІ
-            const parts = [{ text: `Ти експерт з оцінки б/в шин. Проаналізуй фото. 
-            Поверни JSON: {"brand":"", "size":"", "season":"", "tread_depth":"", "quantity":"Кількість шт. на 1 фото (напр. Комплект 4 шт, Пара 2 шт, 1 шт)", "specs":"Короткі тех. характеристики (знос, стан)", "benefits":"Яка вигода для клієнта (безпека, комфорт)", "rec_price": "Оціночна ринкова ціна за весь об'єм у грн (тільки цифра)"}. Мова: українська. Без форматування markdown.` }];
+            const parts = [{ text: "Ти експерт з оцінки б/в шин. Проаналізуй фото. Поверни JSON: {\"brand\":\"\", \"size\":\"\", \"season\":\"\", \"tread_depth\":\"\", \"quantity\":\"Кількість шт. на 1 фото (Комплект 4 шт, Пара 2 шт, 1 шт)\", \"specs\":\"Короткі тех. характеристики\", \"benefits\":\"Яка вигода для клієнта (безпека, комфорт)\", \"rec_price\": \"Оціночна ринкова ціна за весь об'єм у грн (тільки цифра)\"}. Мова: українська. Без форматування markdown." }];
             
             if(fQty) parts.push({ inline_data: { mime_type: fQty.type, data: await toB64(fQty) } });
             if(fSize) parts.push({ inline_data: { mime_type: fSize.type, data: await toB64(fSize) } });
@@ -123,26 +129,31 @@
             });
 
             const d = await res.json();
+            if (d.error) throw new Error(d.error.message);
+            
             const raw = d.candidates[0].content.parts[0].text.replace(/```json|```/gi, '').trim();
             const ai = JSON.parse(raw);
             
             const rad = (ai.size || '').match(/R\d{2}/i)?.[0]?.toUpperCase() || "Інше";
             
-            // Логіка ціни
+            // Логіка рекомендації ціни від ІІ
             if(!pr) {
                 const conf = confirm(`🤖 ІІ рекомендує ціну: ${ai.rec_price} грн.\nЗберегти цю ціну?`);
                 pr = conf ? ai.rec_price : prompt("Введіть свою ціну (грн):", ai.rec_price);
+                if(!pr) pr = 0; 
             }
 
             log("💾 Збереження...");
             const title = `${ai.size} | ${ai.brand} | ${ai.season} | ${ai.quantity}`;
 
-            await sb.from('products').insert([{
+            const { error: dbErr } = await sb.from('products').insert([{
                 brand: ai.brand, size: ai.size, season: ai.season, tread_depth: ai.tread_depth, 
                 quantity: ai.quantity, specs: ai.specs, benefits: ai.benefits, title: title,
                 price: parseFloat(pr), category: rad,
                 image_url_1: u4, image_url_2: u1, image_url_3: u2, image_url_4: u3, status: 'В наявності'
             }]);
+
+            if(dbErr) throw dbErr;
 
             log("✅ УСПІШНО! Можна додавати наступну.");
             document.getElementById('price').value = '';
