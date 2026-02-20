@@ -41,7 +41,7 @@
     <label>Ціна продажу (грн): <br><small style="color:#666">Залиште порожнім, щоб ІІ оцінив сам</small></label>
     <input type="number" id="price" placeholder="Наприклад: 1500">
     
-    <label>1. Фото кількості (шт):</label>
+    <label>1. Фото кількості (ГОЛОВНЕ):</label>
     <input type="file" id="p1" accept="image/*" onchange="updLbl('l1')">
     <label class="file-label" id="l1" for="p1">📸 Скільки шин у продажу?</label>
     
@@ -53,7 +53,7 @@
     <input type="file" id="p3" accept="image/*" onchange="updLbl('l3')">
     <label class="file-label" id="l3" for="p3">📸 Фото бренду</label>
 
-    <label>4. Фото протектора (ГОЛОВНЕ):</label>
+    <label>4. Фото протектора:</label>
     <input type="file" id="p4" accept="image/*" onchange="updLbl('l4')">
     <label class="file-label" id="l4" for="p4">📸 Фото протектора</label>
     
@@ -82,7 +82,6 @@
         s.scrollTop = s.scrollHeight;
     }
 
-    // Потужна функція стиснення фотографій перед відправкою
     async function compressImg(file) {
         if(!file) return null;
         return new Promise((resolve) => {
@@ -93,7 +92,7 @@
                 img.src = e.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800; // Оптимальний розмір для збереження якості та економії місця
+                    const MAX_WIDTH = 800; 
                     let width = img.width;
                     let height = img.height;
 
@@ -115,7 +114,7 @@
                         const reader2 = new FileReader();
                         reader2.readAsDataURL(blob);
                         reader2.onloadend = () => resolve({ file: newFile, b64: reader2.result.split(',')[1] });
-                    }, 'image/jpeg', 0.7); // 70% якості (ідеальний баланс)
+                    }, 'image/jpeg', 0.7); 
                 };
             };
         });
@@ -130,7 +129,7 @@
         const fBrand = document.getElementById('p3').files[0];
         const fTread = document.getElementById('p4').files[0];
 
-        if(!k || !fTread) return alert("Введіть ключ та обов'язково додайте фото протектора (Головне)!");
+        if(!k || !fQty || !fTread) return alert("Введіть ключ, фото кількості та фото протектора!");
         localStorage.setItem('gemini_key', k);
         localStorage.setItem('is_admin', 'true');
 
@@ -152,19 +151,20 @@
                 return sb.storage.from('tyres').getPublicUrl(n).data.publicUrl;
             };
 
-            const u4 = await up(cTread, 'tread'); 
+            // Тепер u1 (кількість) буде головним фото image_url_1
             const u1 = await up(cQty, 'qty');
             const u2 = await up(cSize, 'size');
             const u3 = await up(cBrand, 'brand');
+            const u4 = await up(cTread, 'tread'); 
 
             log("🧠 Аналіз ІІ...");
             
-            const parts = [{ text: "Ти експерт з оцінки б/в шин. Проаналізуй фото. Поверни JSON: {\"brand\":\"\", \"size\":\"\", \"season\":\"\", \"tread_depth\":\"\", \"quantity\":\"Кількість шт. на 1 фото (Комплект 4 шт, Пара 2 шт, 1 шт)\", \"specs\":\"Короткі тех. характеристики\", \"benefits\":\"Яка вигода для клієнта (безпека, комфорт)\", \"rec_price\": \"Оціночна ринкова ціна за весь об'єм у грн (тільки цифра)\"}. Мова: українська. Без форматування markdown." }];
+            const parts = [{ text: "Ти експерт з оцінки б/в шин. Проаналізуй фото. Поверни JSON: {\"brand\":\"\", \"size\":\"\", \"season\":\"\", \"tread_depth\":\"\", \"quantity\":\"УВАЖНО порахуй шини ТІЛЬКИ на першому фото! Якщо лежить 1 шина - пиши '1 шт.', якщо 2 - 'Пара (2 шт.)', якщо 4 - 'Комплект (4 шт.)'\", \"specs\":\"Короткі тех. характеристики\", \"benefits\":\"Яка вигода для клієнта (безпека, комфорт)\", \"rec_price\": \"Оціночна ринкова ціна за весь об'єм у грн (тільки цифра)\"}. Мова: українська. Без форматування markdown." }];
             
             if(cQty) parts.push({ inline_data: { mime_type: "image/jpeg", data: cQty.b64 } });
             if(cSize) parts.push({ inline_data: { mime_type: "image/jpeg", data: cSize.b64 } });
             if(cBrand) parts.push({ inline_data: { mime_type: "image/jpeg", data: cBrand.b64 } });
-            parts.push({ inline_data: { mime_type: "image/jpeg", data: cTread.b64 } });
+            if(cTread) parts.push({ inline_data: { mime_type: "image/jpeg", data: cTread.b64 } });
 
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${k}`, {
                 method: "POST", headers: {"Content-Type":"application/json"},
@@ -192,7 +192,7 @@
                 brand: ai.brand, size: ai.size, season: ai.season, tread_depth: ai.tread_depth, 
                 quantity: ai.quantity, specs: ai.specs, benefits: ai.benefits, title: title,
                 price: parseFloat(pr), category: rad,
-                image_url_1: u4, image_url_2: u1, image_url_3: u2, image_url_4: u3, status: 'В наявності'
+                image_url_1: u1, image_url_2: u2, image_url_3: u3, image_url_4: u4, status: 'В наявності'
             }]);
 
             if(dbErr) throw dbErr;
