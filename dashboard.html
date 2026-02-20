@@ -21,23 +21,29 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        .card { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #333; margin-bottom: 12px; }
-        .card-header { font-weight: bold; color: #fff; margin-bottom: 8px; font-size: 15px; line-height: 1.3; }
+        .card { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #333; margin-bottom: 12px; position: relative; }
+        .card-header { font-weight: bold; color: #fff; margin-bottom: 8px; font-size: 15px; line-height: 1.3; padding-right: 30px;}
         .card-info { font-size: 13px; color: #aaa; margin-bottom: 10px; line-height: 1.4; }
         
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;}
         .stat-box { background: #000; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #222; }
-        .stat-box b { display: block; font-size: 22px; color: var(--olive); margin-top: 5px; }
+        .stat-box b { display: block; font-size: 20px; color: var(--olive); margin-top: 5px; }
         .chart-container { background: #000; border: 1px solid #222; border-radius: 10px; padding: 10px; margin-bottom: 15px; }
         
         .btn { padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; width: 100%; font-size: 13px; margin-top: 5px;}
         .btn-green { background: var(--olive); color: #000; }
         .btn-red { background: transparent; color: var(--red); border: 1px solid var(--red); }
+        .btn-del-icon { position: absolute; top: 12px; right: 12px; background: transparent; color: var(--red); border: none; font-size: 18px; cursor: pointer; padding: 5px; }
         
         .filters { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; }
-        select { background: #000; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 8px; outline: none;}
-        .price-edit { background: #000; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 8px; width: 100px; margin-right: 10px; font-weight: bold; }
+        select { background: #000; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 8px; outline: none; flex: 1;}
+        .price-edit { background: #000; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 8px; width: 80px; margin-right: 10px; font-weight: bold; }
         .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;}
+        
+        /* Чекбокси для масових дій */
+        .chk-box { position: absolute; top: 15px; left: 15px; transform: scale(1.3); accent-color: var(--olive); }
+        .card-with-chk { padding-left: 45px; }
+        .bulk-bar { display: none; background: #222; padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--olive); align-items: center; justify-content: space-between; position: sticky; top: 10px; z-index: 10;}
     </style>
 </head>
 <body>
@@ -56,14 +62,28 @@
 <div id="orders" class="tab-content active"><div id="orders-list">Завантаження...</div></div>
 
 <div id="stock" class="tab-content">
+    <div class="bulk-bar" id="bulk-bar">
+        <span id="sel-count" style="color:#fff; font-weight:bold;">Обрано: 0</span>
+        <button class="btn btn-red" style="width:auto; padding:8px 15px; margin:0;" onclick="bulkDelete()">🗑 Видалити</button>
+    </div>
+
     <div class="filters">
         <select id="f-season" onchange="applyFilters()"><option value="">Всі сезони</option><option value="Зима">Зима</option><option value="Літо">Літо</option></select>
         <select id="f-size" onchange="applyFilters()"><option value="">Всі розміри</option></select>
+        <select id="f-status" onchange="applyFilters()"><option value="В наявності">В наявності</option><option value="Продано">Продані</option><option value="">Всі статуси</option></select>
     </div>
     <div id="stock-list"></div>
 </div>
 
 <div id="stats" class="tab-content">
+    <div class="filters">
+        <select id="stat-period" onchange="loadData()">
+            <option value="all">За весь час</option>
+            <option value="30">За останні 30 днів</option>
+            <option value="7">За останні 7 днів</option>
+            <option value="1">Сьогодні</option>
+        </select>
+    </div>
     <div class="stat-grid" id="stats-grid"></div>
     <div class="chart-container"><canvas id="brandChart"></canvas></div>
     <div class="chart-container"><canvas id="sizeChart"></canvas></div>
@@ -72,6 +92,7 @@
 <script>
     const sb = supabase.createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
     let allProducts = [];
+    let allOrders = [];
 
     function switchTab(id, el) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -85,17 +106,18 @@
             sb.from('products').select('*').order('created_at', {ascending: false})
         ]);
         allProducts = prodRes.data || [];
+        allOrders = ordRes.data || [];
         
-        renderOrders(ordRes.data || []);
+        renderOrders();
         populateFilters(); applyFilters();
-        renderStats(ordRes.data || []);
+        renderStats();
     }
 
-    /* Замовлення */
-    function renderOrders(orders) {
+    /* ЗАМОВЛЕННЯ */
+    function renderOrders() {
         const box = document.getElementById('orders-list'); box.innerHTML = '';
-        const active = orders.filter(o => o.status === 'Новий');
-        if(active.length === 0) return box.innerHTML = '<div class="card" style="text-align:center">Немає нових замовлень</div>';
+        const active = allOrders.filter(o => o.status === 'Новий');
+        if(active.length === 0) return box.innerHTML = '<div class="card" style="text-align:center; color:#888;">Немає нових замовлень</div>';
         
         active.forEach(o => {
             box.innerHTML += `
@@ -106,56 +128,101 @@
                         <b>Доставка:</b> ${o.delivery} | <b>Оплата:</b> ${o.payment}<br>
                         💰 Сума: <b style="color:var(--olive); font-size:16px">${o.price} грн</b>
                     </div>
-                    <button class="btn btn-green" onclick="completeOrder('${o.id}', '${o.product_id}')">✅ ВИКОНАНО (Продано)</button>
+                    <button class="btn btn-green" onclick="completeOrder('${o.id}', '${o.product_id}')">✅ ВИКОНАНО (Відправити в продані)</button>
                 </div>`;
         });
     }
 
     async function completeOrder(oId, pId) {
-        if(!confirm("Підтвердити виконання?")) return;
+        if(!confirm("Підтвердити виконання замовлення?")) return;
         await sb.from('orders').update({ status: 'Виконано' }).eq('id', oId);
-        markSold(pId, false); // Без підтвердження, бо вже підтвердили замовлення
+        await markSold(pId, false); // Переводимо товар у продані
     }
 
-    /* Склад */
+    /* СКЛАД ТА ФІЛЬТРИ */
     function populateFilters() {
         const sizes = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
         const szSelect = document.getElementById('f-size');
+        const currVal = szSelect.value;
+        szSelect.innerHTML = '<option value="">Всі розміри</option>';
         sizes.forEach(s => szSelect.innerHTML += `<option value="${s}">${s}</option>`);
+        szSelect.value = currVal;
     }
 
     function applyFilters() {
         const sz = document.getElementById('f-size').value;
         const se = document.getElementById('f-season').value;
-        let filtered = allProducts.filter(p => p.status === 'В наявності');
+        const st = document.getElementById('f-status').value;
+        
+        let filtered = allProducts;
+        if(st) filtered = filtered.filter(p => p.status === st);
         if(sz) filtered = filtered.filter(p => p.category === sz);
         if(se) filtered = filtered.filter(p => (p.season||'').includes(se));
         
         const box = document.getElementById('stock-list'); box.innerHTML = '';
+        if(filtered.length === 0) return box.innerHTML = '<div class="card" style="text-align:center; color:#888;">Товарів не знайдено</div>';
+
         filtered.forEach(p => {
+            const isSold = p.status === 'Продано';
             box.innerHTML += `
-                <div class="card">
+                <div class="card card-with-chk" style="${isSold ? 'opacity:0.6; border-color:#222;' : ''}">
+                    <input type="checkbox" class="chk-box item-chk" value="${p.id}" onchange="toggleBulk()">
+                    <button class="btn-del-icon" onclick="deleteSingle('${p.id}')">🗑</button>
+                    
                     <div class="card-header">${p.title}</div>
-                    <div class="card-info">Залишок: ${p.tread_depth} | Характеристики: ${p.specs}</div>
+                    <div class="card-info">
+                        Залишок: ${p.tread_depth || '-'} <br>
+                        Статус: <b style="color:${isSold ? '#888' : 'var(--olive)'}">${p.status}</b>
+                    </div>
+                    
+                    ${!isSold ? `
                     <div class="flex-row">
                         <input type="number" id="pr-${p.id}" class="price-edit" value="${p.price}">
                         <button class="btn btn-green" style="width:auto; padding:10px" onclick="updPrice('${p.id}')">💾 Зберегти ціну</button>
                     </div>
-                    <button class="btn btn-red" onclick="markSold('${p.id}', true)">🏷 Відзначити як ПРОДАНО (Офлайн)</button>
+                    <button class="btn btn-red" style="color:#aaa; border-color:#444" onclick="markSold('${p.id}', true)">🏷 Відзначити як ПРОДАНО (Офлайн)</button>
+                    ` : ''}
                 </div>`;
         });
+        toggleBulk();
     }
 
-    async function updPrice(id) {
-        const newPr = document.getElementById(`pr-${id}`).value;
-        await sb.from('products').update({ price: newPr }).eq('id', id);
-        alert("Ціну оновлено!"); loadData();
+    /* МАСОВІ ДІЇ ТА ВИДАЛЕННЯ */
+    function toggleBulk() {
+        const chks = document.querySelectorAll('.item-chk:checked');
+        const bar = document.getElementById('bulk-bar');
+        document.getElementById('sel-count').innerText = `Обрано: ${chks.length}`;
+        bar.style.display = chks.length > 0 ? 'flex' : 'none';
+    }
+
+    async function deleteSingle(id) {
+        if(!confirm("Видалити цей товар назавжди?")) return;
+        await deleteLogic([id]);
+    }
+
+    async function bulkDelete() {
+        const chks = document.querySelectorAll('.item-chk:checked');
+        if(!confirm(`Видалити обрані товари (${chks.length} шт.) назавжди?`)) return;
+        const ids = Array.from(chks).map(c => c.value);
+        await deleteLogic(ids);
+    }
+
+    async function deleteLogic(ids) {
+        const toDelete = allProducts.filter(p => ids.includes(p.id));
+        
+        // Видалення фото з Storage
+        for(let p of toDelete) {
+            const delImg = async (url) => { if(url) await sb.storage.from('tyres').remove([url.split('/').pop()]); };
+            await delImg(p.image_url_1); await delImg(p.image_url_2); await delImg(p.image_url_3); await delImg(p.image_url_4);
+        }
+        
+        await sb.from('products').delete().in('id', ids);
+        loadData();
     }
 
     async function markSold(id, ask = true) {
-        if(ask && !confirm("Відзначити як продано? Фото будуть видалені для економії місця, але статистика збережеться.")) return;
+        if(ask && !confirm("Перевести в продані? Фотографії будуть видалені, але статистика збережеться.")) return;
         
-        // Видаляємо фото зі Storage, залишаємо текст для статистики
         const p = allProducts.find(x => x.id === id);
         const delImg = async (url) => { if(url) await sb.storage.from('tyres').remove([url.split('/').pop()]); };
         await delImg(p.image_url_1); await delImg(p.image_url_2); await delImg(p.image_url_3); await delImg(p.image_url_4);
@@ -164,28 +231,45 @@
         loadData();
     }
 
-    /* Статистика */
+    async function updPrice(id) {
+        const newPr = document.getElementById(`pr-${id}`).value;
+        await sb.from('products').update({ price: newPr }).eq('id', id);
+        alert("Ціну оновлено!"); loadData();
+    }
+
+    /* СТАТИСТИКА */
     let chart1, chart2;
-    function renderStats(orders) {
-        const soldProds = allProducts.filter(p => p.status === 'Продано');
-        const activeProds = allProducts.filter(p => p.status === 'В наявності');
+    function renderStats() {
+        const period = document.getElementById('stat-period').value;
+        const now = new Date();
+        let limitDate = new Date(0); // 1970
+        if(period !== 'all') { limitDate = new Date(now.setDate(now.getDate() - parseInt(period))); }
+
+        // Фільтруємо за датою
+        const prods = allProducts.filter(p => new Date(p.created_at) >= limitDate);
+        const ords = allOrders.filter(o => new Date(o.created_at) >= limitDate);
+
+        const soldProds = prods.filter(p => p.status === 'Продано');
+        const activeProds = prods.filter(p => p.status === 'В наявності');
         
         let activeSum = 0; activeProds.forEach(p => activeSum += Number(p.price));
-        let soldSum = 0; orders.filter(o => o.status === 'Виконано').forEach(o => soldSum += Number(o.price));
-        soldProds.forEach(p => { if(!orders.find(o => o.product_id === p.id)) soldSum += Number(p.price); }); // офлайн продажі
+        let soldSum = 0; ords.filter(o => o.status === 'Виконано').forEach(o => soldSum += Number(o.price));
+        
+        // Додаємо офлайн продажі (товари зі статусом Продано, яких немає в замовленнях)
+        soldProds.forEach(p => { if(!ords.find(o => o.product_id === p.id)) soldSum += Number(p.price); });
 
         document.getElementById('stats-grid').innerHTML = `
-            <div class="stat-box">Товарів шт.<b>${activeProds.length}</b></div>
+            <div class="stat-box">На складі шт.<b>${activeProds.length}</b></div>
             <div class="stat-box">Сума складу<b>${activeSum} грн</b></div>
             <div class="stat-box" style="border-color:var(--olive)">Продано шт.<b>${soldProds.length}</b></div>
-            <div class="stat-box" style="border-color:var(--olive)">Заробіток<b>${soldSum} грн</b></div>
+            <div class="stat-box" style="border-color:var(--olive)">Продажі на суму<b>${soldSum} грн</b></div>
         `;
 
         // Графіки
         const brands = {}; const sizes = {};
         soldProds.forEach(p => {
-            brands[p.brand] = (brands[p.brand] || 0) + 1;
-            sizes[p.category] = (sizes[p.category] || 0) + 1;
+            brands[p.brand || 'Невідомо'] = (brands[p.brand || 'Невідомо'] || 0) + 1;
+            sizes[p.category || 'Інше'] = (sizes[p.category || 'Інше'] || 0) + 1;
         });
 
         if(chart1) chart1.destroy(); if(chart2) chart2.destroy();
@@ -196,14 +280,19 @@
             options: { plugins: { title: { display: true, text: 'Продажі за брендами', color: '#fff' }, legend: { labels: { color: '#bbb' } } } }
         });
 
+        // Виправлення для дробових чисел на графіку розмірів
         chart2 = new Chart(document.getElementById('sizeChart'), {
             type: 'bar',
             data: { labels: Object.keys(sizes), datasets: [{ label: 'Продано шт.', data: Object.values(sizes), backgroundColor: '#8fbc55' }] },
-            options: { plugins: { title: { display: true, text: 'Продажі за розмірами', color: '#fff' }, legend: { display: false } }, scales: { y: { ticks: { color: '#bbb' } }, x: { ticks: { color: '#bbb' } } } }
+            options: { 
+                plugins: { title: { display: true, text: 'Продажі за розмірами', color: '#fff' }, legend: { display: false } }, 
+                scales: { 
+                    y: { ticks: { color: '#bbb', stepSize: 1, precision: 0 } }, // Тільки цілі числа
+                    x: { ticks: { color: '#bbb' } } 
+                } 
+            }
         });
     }
-
-    loadData();
 </script>
 </body>
 </html>
