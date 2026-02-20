@@ -27,7 +27,6 @@
         .card { background: var(--panel); border-radius: 16px; border: 1px solid #2a2e35; padding: 12px; display: flex; flex-direction: column; position: relative;}
         .badge { position: absolute; top: 20px; right: 20px; background: var(--olive); color: #000; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; z-index: 10;}
         
-        /* Оновлена сітка фотографій (1 велика + 3 малих) */
         .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 12px; }
         .main-p { grid-column: span 3; height: 160px; background: #000; border-radius: 10px; overflow: hidden; cursor: pointer; border: 1px solid #222;}
         .sub-p { height: 70px; background: #000; border-radius: 6px; overflow: hidden; cursor: pointer; border: 1px solid #222;}
@@ -122,17 +121,21 @@
         list.forEach(p => {
             const imgs = [p.image_url_1, p.image_url_2, p.image_url_3, p.image_url_4].filter(Boolean);
             const imgJson = JSON.stringify(imgs).replace(/"/g, '&quot;');
-            const badge = parseFloat(p.tread_depth) > 7 ? '<div class="badge">🔥 Стан нової</div>' : '';
             
+            // Захист від помилок, якщо ІІ не вказав знос
+            const badgeText = p.tread_depth || '';
+            const badge = badgeText.includes('нови') || badgeText.includes('8 мм') ? '<div class="badge">🔥 Стан нової</div>' : '';
+            
+            // Нова структура опису (Знос -> Тех. хар. -> Переваги)
             let descHtml = '';
-            if (p.specs || p.benefits) {
-                descHtml = (p.specs ? `<b>Характеристики:</b> ${p.specs}<br><br>` : '') + 
-                           (p.benefits ? `<b>Переваги:</b> ${p.benefits}` : '');
+            if (p.specs || p.benefits || p.tread_depth) {
+                descHtml = (p.tread_depth ? `<span style="color:var(--olive)"><b>Знос / Стан:</b></span> ${p.tread_depth}<br><br>` : '') +
+                           (p.specs ? `<span style="color:var(--olive)"><b>Тех. характеристики:</b></span> ${p.specs}<br><br>` : '') + 
+                           (p.benefits ? `<span style="color:var(--olive)"><b>Вигода та переваги:</b></span> ${p.benefits}` : '');
             } else {
                 descHtml = p.description || '';
             }
 
-            // Виводимо 1 велике фото та до 3-х маленьких
             g.innerHTML += `
                 <div class="card">
                     ${badge}
@@ -187,7 +190,7 @@
 
     function filter() {
         const v = document.getElementById('search').value.toLowerCase();
-        render(items.filter(i => (`${i.title} ${i.specs} ${i.benefits}`).toLowerCase().includes(v)));
+        render(items.filter(i => (`${i.title} ${i.specs} ${i.benefits} ${i.tread_depth}`).toLowerCase().includes(v)));
     }
     function setCat(c, b) {
         document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
