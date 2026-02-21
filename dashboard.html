@@ -16,10 +16,11 @@
         .nav-link:active { transform: translateY(2px); box-shadow: none; }
         
         .tabs { display: flex; border-bottom: 2px solid #333; margin-bottom: 20px; overflow-x: auto; white-space: nowrap; }
-        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; color: #888; }
+        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; color: #888; transition: 0.3s;}
         .tab.active { color: var(--olive); border-bottom: 3px solid var(--olive); }
         .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
         .card { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #333; margin-bottom: 12px; position: relative; }
         .card-header { font-weight: bold; color: #fff; margin-bottom: 8px; font-size: 15px; line-height: 1.3; padding-right: 30px;}
@@ -30,7 +31,8 @@
         .stat-box b { display: block; font-size: 20px; color: var(--olive); margin-top: 5px; }
         .chart-container { background: #000; border: 1px solid #222; border-radius: 10px; padding: 10px; margin-bottom: 15px; }
         
-        .btn { padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; width: 100%; font-size: 13px; margin-top: 5px;}
+        .btn { padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; width: 100%; font-size: 13px; margin-top: 5px; transition: 0.2s;}
+        .btn:active { transform: translateY(2px); }
         .btn-green { background: var(--olive); color: #000; }
         .btn-red { background: transparent; color: var(--red); border: 1px solid var(--red); }
         .btn-del-icon { position: absolute; top: 12px; right: 12px; background: transparent; color: var(--red); border: none; font-size: 18px; cursor: pointer; padding: 5px; }
@@ -40,8 +42,7 @@
         .price-edit { background: #000; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 8px; width: 80px; margin-right: 10px; font-weight: bold; }
         .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;}
         
-        /* Чекбокси для масових дій */
-        .chk-box { position: absolute; top: 15px; left: 15px; transform: scale(1.3); accent-color: var(--olive); }
+        .chk-box { position: absolute; top: 15px; left: 15px; transform: scale(1.3); accent-color: var(--olive); cursor: pointer;}
         .card-with-chk { padding-left: 45px; }
         .bulk-bar { display: none; background: #222; padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--olive); align-items: center; justify-content: space-between; position: sticky; top: 10px; z-index: 10;}
     </style>
@@ -59,7 +60,7 @@
     <div class="tab" onclick="switchTab('stats', this)">📊 Статистика</div>
 </div>
 
-<div id="orders" class="tab-content active"><div id="orders-list">Завантаження...</div></div>
+<div id="orders" class="tab-content active"><div id="orders-list"><div style="text-align:center; padding:20px; color:#888;">⏳ Завантаження...</div></div></div>
 
 <div id="stock" class="tab-content">
     <div class="bulk-bar" id="bulk-bar">
@@ -72,12 +73,12 @@
         <select id="f-size" onchange="applyFilters()"><option value="">Всі розміри</option></select>
         <select id="f-status" onchange="applyFilters()"><option value="В наявності">В наявності</option><option value="Продано">Продані</option><option value="">Всі статуси</option></select>
     </div>
-    <div id="stock-list"></div>
+    <div id="stock-list"><div style="text-align:center; padding:20px; color:#888;">⏳ Завантаження складу...</div></div>
 </div>
 
 <div id="stats" class="tab-content">
     <div class="filters">
-        <select id="stat-period" onchange="loadData()">
+        <select id="stat-period" onchange="renderStats()">
             <option value="all">За весь час</option>
             <option value="30">За останні 30 днів</option>
             <option value="7">За останні 7 днів</option>
@@ -94,13 +95,18 @@
     let allProducts = [];
     let allOrders = [];
 
+    // Ініціалізація бази відразу при вході
+    window.onload = () => { fetchData(); };
+
     function switchTab(id, el) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(id).classList.add('active'); el.classList.add('active');
+        document.getElementById(id).classList.add('active'); 
+        el.classList.add('active');
     }
 
-    async function loadData() {
+    // Завантажуємо всі дані ОДИН РАЗ, щоб не витрачати квоти
+    async function fetchData() {
         const [ordRes, prodRes] = await Promise.all([
             sb.from('orders').select('*').order('created_at', {ascending: false}),
             sb.from('products').select('*').order('created_at', {ascending: false})
@@ -109,7 +115,8 @@
         allOrders = ordRes.data || [];
         
         renderOrders();
-        populateFilters(); applyFilters();
+        populateFilters(); 
+        applyFilters();
         renderStats();
     }
 
@@ -136,10 +143,10 @@
     async function completeOrder(oId, pId) {
         if(!confirm("Підтвердити виконання замовлення?")) return;
         await sb.from('orders').update({ status: 'Виконано' }).eq('id', oId);
-        await markSold(pId, false); // Переводимо товар у продані
+        await markSold(pId, false); 
     }
 
-    /* СКЛАД ТА ФІЛЬТРИ */
+    /* СКЛАД */
     function populateFilters() {
         const sizes = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
         const szSelect = document.getElementById('f-size');
@@ -207,69 +214,86 @@
         await deleteLogic(ids);
     }
 
+    // Розумне видалення з бази та зачистка сховища фото
     async function deleteLogic(ids) {
         const toDelete = allProducts.filter(p => ids.includes(p.id));
-        
-        // Видалення фото з Storage
         for(let p of toDelete) {
             const delImg = async (url) => { if(url) await sb.storage.from('tyres').remove([url.split('/').pop()]); };
             await delImg(p.image_url_1); await delImg(p.image_url_2); await delImg(p.image_url_3); await delImg(p.image_url_4);
         }
-        
         await sb.from('products').delete().in('id', ids);
-        loadData();
+        fetchData(); // Оновлюємо базу після видалення
     }
 
     async function markSold(id, ask = true) {
         if(ask && !confirm("Перевести в продані? Фотографії будуть видалені, але статистика збережеться.")) return;
-        
         const p = allProducts.find(x => x.id === id);
         const delImg = async (url) => { if(url) await sb.storage.from('tyres').remove([url.split('/').pop()]); };
         await delImg(p.image_url_1); await delImg(p.image_url_2); await delImg(p.image_url_3); await delImg(p.image_url_4);
-        
         await sb.from('products').update({ status: 'Продано', image_url_1: null, image_url_2: null, image_url_3: null, image_url_4: null }).eq('id', id);
-        loadData();
+        fetchData();
     }
 
     async function updPrice(id) {
         const newPr = document.getElementById(`pr-${id}`).value;
         await sb.from('products').update({ price: newPr }).eq('id', id);
-        alert("Ціну оновлено!"); loadData();
+        alert("Ціну оновлено!"); fetchData();
     }
 
-    /* СТАТИСТИКА */
+    /* СТАТИСТИКА (Точний підрахунок штук) */
+    function getQty(str) {
+        if (!str) return 1;
+        const s = str.toLowerCase();
+        if (s.includes('пара') || s.includes('2 шт')) return 2;
+        if (s.includes('комплект') || s.includes('4 шт')) return 4;
+        const match = str.match(/\d+/);
+        return match ? parseInt(match[0]) : 1;
+    }
+
     let chart1, chart2;
     function renderStats() {
         const period = document.getElementById('stat-period').value;
         const now = new Date();
-        let limitDate = new Date(0); // 1970
+        let limitDate = new Date(0);
         if(period !== 'all') { limitDate = new Date(now.setDate(now.getDate() - parseInt(period))); }
 
-        // Фільтруємо за датою
         const prods = allProducts.filter(p => new Date(p.created_at) >= limitDate);
         const ords = allOrders.filter(o => new Date(o.created_at) >= limitDate);
 
         const soldProds = prods.filter(p => p.status === 'Продано');
         const activeProds = prods.filter(p => p.status === 'В наявності');
         
-        let activeSum = 0; activeProds.forEach(p => activeSum += Number(p.price));
-        let soldSum = 0; ords.filter(o => o.status === 'Виконано').forEach(o => soldSum += Number(o.price));
+        let activeSum = 0; 
+        let activeTiresCount = 0;
+        activeProds.forEach(p => { 
+            activeSum += Number(p.price); 
+            activeTiresCount += getQty(p.quantity); 
+        });
+
+        let soldSum = 0; 
+        let soldTiresCount = 0;
         
-        // Додаємо офлайн продажі (товари зі статусом Продано, яких немає в замовленнях)
-        soldProds.forEach(p => { if(!ords.find(o => o.product_id === p.id)) soldSum += Number(p.price); });
+        // Додаємо суми виконаних замовлень
+        ords.filter(o => o.status === 'Виконано').forEach(o => soldSum += Number(o.price));
+        
+        // Рахуємо фізичні продані шини (і офлайн продажі)
+        soldProds.forEach(p => { 
+            soldTiresCount += getQty(p.quantity);
+            if(!ords.find(o => o.product_id === p.id)) soldSum += Number(p.price); 
+        });
 
         document.getElementById('stats-grid').innerHTML = `
-            <div class="stat-box">На складі шт.<b>${activeProds.length}</b></div>
+            <div class="stat-box">На складі шт.<b>${activeTiresCount}</b></div>
             <div class="stat-box">Сума складу<b>${activeSum} грн</b></div>
-            <div class="stat-box" style="border-color:var(--olive)">Продано шт.<b>${soldProds.length}</b></div>
+            <div class="stat-box" style="border-color:var(--olive)">Продано шт.<b>${soldTiresCount}</b></div>
             <div class="stat-box" style="border-color:var(--olive)">Продажі на суму<b>${soldSum} грн</b></div>
         `;
 
-        // Графіки
         const brands = {}; const sizes = {};
         soldProds.forEach(p => {
-            brands[p.brand || 'Невідомо'] = (brands[p.brand || 'Невідомо'] || 0) + 1;
-            sizes[p.category || 'Інше'] = (sizes[p.category || 'Інше'] || 0) + 1;
+            const q = getQty(p.quantity);
+            brands[p.brand || 'Невідомо'] = (brands[p.brand || 'Невідомо'] || 0) + q;
+            sizes[p.category || 'Інше'] = (sizes[p.category || 'Інше'] || 0) + q;
         });
 
         if(chart1) chart1.destroy(); if(chart2) chart2.destroy();
@@ -280,16 +304,12 @@
             options: { plugins: { title: { display: true, text: 'Продажі за брендами', color: '#fff' }, legend: { labels: { color: '#bbb' } } } }
         });
 
-        // Виправлення для дробових чисел на графіку розмірів
         chart2 = new Chart(document.getElementById('sizeChart'), {
             type: 'bar',
             data: { labels: Object.keys(sizes), datasets: [{ label: 'Продано шт.', data: Object.values(sizes), backgroundColor: '#8fbc55' }] },
             options: { 
                 plugins: { title: { display: true, text: 'Продажі за розмірами', color: '#fff' }, legend: { display: false } }, 
-                scales: { 
-                    y: { ticks: { color: '#bbb', stepSize: 1, precision: 0 } }, // Тільки цілі числа
-                    x: { ticks: { color: '#bbb' } } 
-                } 
+                scales: { y: { ticks: { color: '#bbb', stepSize: 1, precision: 0 } }, x: { ticks: { color: '#bbb' } } } 
             }
         });
     }
