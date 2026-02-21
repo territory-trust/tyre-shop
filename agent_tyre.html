@@ -17,8 +17,11 @@
         label { display: block; margin: 15px 0 5px; color: #888; font-size: 14px; }
         input[type="number"], input[type="password"] { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; outline: none; font-size: 16px; }
         input:focus { border-color: var(--olive); }
-        .file-label { display: block; background: #000; border: 1px dashed var(--olive); padding: 15px; text-align: center; border-radius: 8px; color: var(--olive); cursor: pointer; margin-bottom: 10px; font-weight: bold; transition: 0.3s; }
+        
+        .flex-btns { display: flex; gap: 10px; margin-bottom: 15px; }
+        .file-label { flex: 1; background: #000; border: 1px solid var(--olive); padding: 12px 5px; text-align: center; border-radius: 8px; color: var(--olive); cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; transition: 0.3s; display: flex; justify-content: center; align-items: center;}
         input[type="file"] { display: none; }
+        
         .btn { background: linear-gradient(180deg, #556b2f 0%, #3e4e22 100%); color: #fff; border: none; width: 100%; padding: 18px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 16px; box-shadow: 0 4px 0 #283315; transition: 0.2s; }
         .btn:active { transform: translateY(2px); box-shadow: none; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -35,27 +38,35 @@
 <div class="card">
     <h2>➕ Новий товар</h2>
     
-    <label>Google API Key:</label>
+    <label>Google API Key (зберігається):</label>
     <input type="password" id="apiKey" placeholder="Вставте ключ">
     
     <label>Ціна продажу (грн): <br><small style="color:#666">Залиште порожнім, щоб ІІ оцінив сам</small></label>
     <input type="number" id="price" placeholder="Наприклад: 1500">
     
     <label>1. Фото кількості (ГОЛОВНЕ):</label>
-    <input type="file" id="p1" accept="image/*" onchange="updLbl('l1')">
-    <label class="file-label" id="l1" for="p1">📸 Скільки шин у продажу?</label>
-    
+    <div class="flex-btns">
+        <label class="file-label" id="l1_cam"><input type="file" id="p1_cam" accept="image/*" capture="environment" onchange="updLbl('l1_cam', 'p1_cam', 1)">📷 Камера</label>
+        <label class="file-label" id="l1_gal"><input type="file" id="p1_gal" accept="image/*" onchange="updLbl('l1_gal', 'p1_gal', 1)">🖼 Галерея</label>
+    </div>
+
     <label>2. Фото розміру (маркування):</label>
-    <input type="file" id="p2" accept="image/*" onchange="updLbl('l2')">
-    <label class="file-label" id="l2" for="p2">📸 Фото розміру</label>
+    <div class="flex-btns">
+        <label class="file-label" id="l2_cam"><input type="file" id="p2_cam" accept="image/*" capture="environment" onchange="updLbl('l2_cam', 'p2_cam', 2)">📷 Камера</label>
+        <label class="file-label" id="l2_gal"><input type="file" id="p2_gal" accept="image/*" onchange="updLbl('l2_gal', 'p2_gal', 2)">🖼 Галерея</label>
+    </div>
 
     <label>3. Фото бренду/моделі:</label>
-    <input type="file" id="p3" accept="image/*" onchange="updLbl('l3')">
-    <label class="file-label" id="l3" for="p3">📸 Фото бренду</label>
+    <div class="flex-btns">
+        <label class="file-label" id="l3_cam"><input type="file" id="p3_cam" accept="image/*" capture="environment" onchange="updLbl('l3_cam', 'p3_cam', 3)">📷 Камера</label>
+        <label class="file-label" id="l3_gal"><input type="file" id="p3_gal" accept="image/*" onchange="updLbl('l3_gal', 'p3_gal', 3)">🖼 Галерея</label>
+    </div>
 
     <label>4. Фото протектора:</label>
-    <input type="file" id="p4" accept="image/*" onchange="updLbl('l4')">
-    <label class="file-label" id="l4" for="p4">📸 Фото протектора</label>
+    <div class="flex-btns">
+        <label class="file-label" id="l4_cam"><input type="file" id="p4_cam" accept="image/*" capture="environment" onchange="updLbl('l4_cam', 'p4_cam', 4)">📷 Камера</label>
+        <label class="file-label" id="l4_gal"><input type="file" id="p4_gal" accept="image/*" onchange="updLbl('l4_gal', 'p4_gal', 4)">🖼 Галерея</label>
+    </div>
     
     <button class="btn" id="mainBtn" onclick="start()">АНАЛІЗ ТА ПУБЛІКАЦІЯ</button>
     <div id="status"></div>
@@ -63,16 +74,26 @@
 
 <script>
     const sb = supabase.createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
+    let selectedFiles = [null, null, null, null];
 
     window.onload = () => {
         const savedKey = localStorage.getItem('gemini_key');
         if(savedKey) document.getElementById('apiKey').value = savedKey;
     };
 
-    function updLbl(id) { 
-        const lbl = document.getElementById(id);
-        lbl.style.background = '#1a2e1a'; 
-        lbl.innerHTML = '✅ Фото завантажено'; 
+    function updLbl(labelId, inputId, index) { 
+        const file = document.getElementById(inputId).files[0];
+        if(file) {
+            selectedFiles[index - 1] = file;
+            document.getElementById(`l${index}_cam`).style.background = '#000';
+            document.getElementById(`l${index}_gal`).style.background = '#000';
+            document.getElementById(`l${index}_cam`).innerHTML = '📷 Камера';
+            document.getElementById(`l${index}_gal`).innerHTML = '🖼 Галерея';
+            
+            const active = document.getElementById(labelId);
+            active.style.background = '#1a2e1a';
+            active.innerHTML = '✅ Є фото';
+        }
     }
 
     function log(msg, isErr = false) {
@@ -82,6 +103,7 @@
         s.scrollTop = s.scrollHeight;
     }
 
+    // Стиснення фотографій в оперативній пам'яті телефону
     async function compressImg(file) {
         if(!file) return null;
         return new Promise((resolve) => {
@@ -95,20 +117,14 @@
                     const MAX_WIDTH = 800; 
                     let width = img.width;
                     let height = img.height;
-
-                    if (width > height && width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    } else if (height > MAX_WIDTH) {
-                        width *= MAX_WIDTH / height;
-                        height = MAX_WIDTH;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
+                    
+                    if (width > height && width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } 
+                    else if (height > MAX_WIDTH) { width *= MAX_WIDTH / height; height = MAX_WIDTH; }
+                    
+                    canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-
+                    
                     canvas.toBlob((blob) => {
                         const newFile = new File([blob], file.name, { type: 'image/jpeg' });
                         const reader2 = new FileReader();
@@ -124,23 +140,20 @@
         const btn = document.getElementById('mainBtn');
         const k = document.getElementById('apiKey').value;
         let pr = document.getElementById('price').value;
-        const fQty = document.getElementById('p1').files[0];
-        const fSize = document.getElementById('p2').files[0];
-        const fBrand = document.getElementById('p3').files[0];
-        const fTread = document.getElementById('p4').files[0];
-
-        if(!k || !fQty || !fTread) return alert("Введіть ключ, фото кількості та фото протектора!");
+        
+        if(!k || !selectedFiles[0] || !selectedFiles[3]) return alert("Введіть ключ, фото кількості (1) та фото протектора (4)!");
+        
         localStorage.setItem('gemini_key', k);
         localStorage.setItem('is_admin', 'true');
 
         btn.disabled = true; document.getElementById('status').innerText = '';
         
         try {
-            log("⏳ Оптимізація та стиснення фото...");
-            const cQty = await compressImg(fQty);
-            const cSize = await compressImg(fSize);
-            const cBrand = await compressImg(fBrand);
-            const cTread = await compressImg(fTread);
+            log("⏳ Оптимізація фотографій...");
+            const cQty = await compressImg(selectedFiles[0]);
+            const cSize = await compressImg(selectedFiles[1]);
+            const cBrand = await compressImg(selectedFiles[2]);
+            const cTread = await compressImg(selectedFiles[3]);
 
             log("☁️ Завантаження у сховище...");
             const up = async (cObj, tag) => {
@@ -158,7 +171,7 @@
 
             log("🧠 Аналіз ІІ...");
             
-            const parts = [{ text: "Ти експерт з оцінки б/в шин. Проаналізуй фото. Поверни JSON: {\"brand\":\"\", \"size\":\"\", \"season\":\"\", \"tread_depth\":\"Оціни знос (у %) та залишок протектора (у мм), наприклад 'Знос 20%, залишок 6 мм'\", \"quantity\":\"УВАЖНО: Порахуй шини ТІЛЬКИ на ПЕРШОМУ ФОТО на ПЕРЕДНЬОМУ ПЛАНІ! Ігноруй шини на задньому фоні! Якщо на передньому плані чітко лежить 1 шина - суворо пиши '1 шт.'. Якщо 2 - 'Пара (2 шт.)', якщо 4 - 'Комплект (4 шт.)'\", \"specs\":\"Технічні характеристики (індекси, шипи/липучка, тип протектора)\", \"benefits\":\"Яка вигода та переваги для клієнта (безпека, комфорт, економія)\", \"rec_price\": \"Оціночна ринкова ціна за весь об'єм у грн (тільки цифра)\"}. Мова: українська. Без форматування markdown." }];
+            const parts = [{ text: "Ти експерт з оцінки б/в шин. Поверни JSON: {\"brand\":\"\", \"size\":\"\", \"season\":\"\", \"tread_depth\":\"Оціни знос (у %) та залишок протектора (у мм)\", \"quantity\":\"СУВОРО порахуй фізичні гумові кола ТІЛЬКИ на ПЕРШОМУ фото на передньому плані! Ігноруй все на задньому фоні! Якщо лежить 1 шина - суворо пиши '1 шт.', якщо 2 - 'Пара (2 шт.)', якщо 4 - 'Комплект (4 шт.)'\", \"specs\":\"Технічні характеристики\", \"benefits\":\"Вигода та переваги для клієнта\", \"rec_price\": \"Оціночна ринкова ціна (тільки цифра)\"}. Мова: українська. Без форматування markdown." }];
             
             if(cQty) parts.push({ inline_data: { mime_type: "image/jpeg", data: cQty.b64 } });
             if(cSize) parts.push({ inline_data: { mime_type: "image/jpeg", data: cSize.b64 } });
@@ -175,7 +188,6 @@
             
             const raw = d.candidates[0].content.parts[0].text.replace(/```json|```/gi, '').trim();
             const ai = JSON.parse(raw);
-            
             const rad = (ai.size || '').match(/R\d{2}/i)?.[0]?.toUpperCase() || "Інше";
             
             if(!pr) {
@@ -198,8 +210,14 @@
 
             log("✅ УСПІШНО! Можна додавати наступну.");
             document.getElementById('price').value = '';
+            selectedFiles = [null, null, null, null];
             document.querySelectorAll('input[type=file]').forEach(i => i.value = '');
-            document.querySelectorAll('.file-label').forEach((l, i) => { l.style.background = '#000'; l.innerHTML = `📸 Вибрати фото ${i+1}`; });
+            for(let i=1; i<=4; i++) {
+                document.getElementById(`l${i}_cam`).style.background = '#000';
+                document.getElementById(`l${i}_gal`).style.background = '#000';
+                document.getElementById(`l${i}_cam`).innerHTML = '📷 Камера';
+                document.getElementById(`l${i}_gal`).innerHTML = '🖼 Галерея';
+            }
             setTimeout(() => btn.disabled = false, 2000);
         } catch(e) { log("❌ Помилка: " + e.message, true); btn.disabled = false; }
     }
