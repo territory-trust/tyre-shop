@@ -95,7 +95,6 @@
     let allProducts = [];
     let allOrders = [];
 
-    // Ініціалізація бази відразу при вході
     window.onload = () => { fetchData(); };
 
     function switchTab(id, el) {
@@ -105,7 +104,6 @@
         el.classList.add('active');
     }
 
-    // Завантажуємо всі дані ОДИН РАЗ, щоб не витрачати квоти
     async function fetchData() {
         const [ordRes, prodRes] = await Promise.all([
             sb.from('orders').select('*').order('created_at', {ascending: false}),
@@ -120,7 +118,6 @@
         renderStats();
     }
 
-    /* ЗАМОВЛЕННЯ */
     function renderOrders() {
         const box = document.getElementById('orders-list'); box.innerHTML = '';
         const active = allOrders.filter(o => o.status === 'Новий');
@@ -146,7 +143,6 @@
         await markSold(pId, false); 
     }
 
-    /* СКЛАД */
     function populateFilters() {
         const sizes = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
         const szSelect = document.getElementById('f-size');
@@ -164,7 +160,12 @@
         let filtered = allProducts;
         if(st) filtered = filtered.filter(p => p.status === st);
         if(sz) filtered = filtered.filter(p => p.category === sz);
-        if(se) filtered = filtered.filter(p => (p.season||'').includes(se));
+        
+        // Розумний фільтр сезону (пошук за коренем слова)
+        if(se) {
+            const term = se === 'Зима' ? 'зим' : 'літ';
+            filtered = filtered.filter(p => (p.season || '').toLowerCase().includes(term));
+        }
         
         const box = document.getElementById('stock-list'); box.innerHTML = '';
         if(filtered.length === 0) return box.innerHTML = '<div class="card" style="text-align:center; color:#888;">Товарів не знайдено</div>';
@@ -194,7 +195,6 @@
         toggleBulk();
     }
 
-    /* МАСОВІ ДІЇ ТА ВИДАЛЕННЯ */
     function toggleBulk() {
         const chks = document.querySelectorAll('.item-chk:checked');
         const bar = document.getElementById('bulk-bar');
@@ -214,7 +214,6 @@
         await deleteLogic(ids);
     }
 
-    // Розумне видалення з бази та зачистка сховища фото
     async function deleteLogic(ids) {
         const toDelete = allProducts.filter(p => ids.includes(p.id));
         for(let p of toDelete) {
@@ -222,7 +221,7 @@
             await delImg(p.image_url_1); await delImg(p.image_url_2); await delImg(p.image_url_3); await delImg(p.image_url_4);
         }
         await sb.from('products').delete().in('id', ids);
-        fetchData(); // Оновлюємо базу після видалення
+        fetchData(); 
     }
 
     async function markSold(id, ask = true) {
@@ -240,7 +239,6 @@
         alert("Ціну оновлено!"); fetchData();
     }
 
-    /* СТАТИСТИКА (Точний підрахунок штук) */
     function getQty(str) {
         if (!str) return 1;
         const s = str.toLowerCase();
@@ -273,10 +271,8 @@
         let soldSum = 0; 
         let soldTiresCount = 0;
         
-        // Додаємо суми виконаних замовлень
         ords.filter(o => o.status === 'Виконано').forEach(o => soldSum += Number(o.price));
         
-        // Рахуємо фізичні продані шини (і офлайн продажі)
         soldProds.forEach(p => { 
             soldTiresCount += getQty(p.quantity);
             if(!ords.find(o => o.product_id === p.id)) soldSum += Number(p.price); 
