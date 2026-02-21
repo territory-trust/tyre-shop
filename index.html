@@ -24,7 +24,8 @@
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px; max-width: 900px; margin: auto; }
         @media (min-width: 600px) { .grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
         
-        .card { background: var(--panel); border-radius: 16px; border: 1px solid #2a2e35; padding: 12px; display: flex; flex-direction: column; position: relative;}
+        /* Вирівнювання карток та кнопок по низу */
+        .card { background: var(--panel); border-radius: 16px; border: 1px solid #2a2e35; padding: 12px; display: flex; flex-direction: column; position: relative; height: 100%; box-sizing: border-box;}
         .badge { position: absolute; top: 20px; right: 20px; background: var(--olive); color: #000; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; z-index: 10;}
         
         .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 12px; }
@@ -32,15 +33,17 @@
         .sub-p { height: 70px; background: #000; border-radius: 6px; overflow: hidden; cursor: pointer; border: 1px solid #222;}
         img { width: 100%; height: 100%; object-fit: cover; }
         
-        .title { font-weight: 800; font-size: 14px; color: #fff; line-height: 1.3; margin-bottom: 8px; min-height: 36px;}
+        /* Фіксована висота заголовка */
+        .title { font-weight: 800; font-size: 14px; color: #fff; line-height: 1.3; margin-bottom: 8px; min-height: 55px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
         .price { color: var(--olive); font-size: 20px; font-weight: 900; margin-bottom: 12px; }
         
-        .desc-box { background: #0f1114; padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #222; font-size: 13px; color: #bbb; line-height: 1.5;}
+        /* Опис займає весь вільний простір, відштовхуючи кнопку */
+        .desc-box { background: #0f1114; padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #222; font-size: 13px; color: #bbb; line-height: 1.5; flex-grow: 1;}
         .desc-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .desc-text.open { -webkit-line-clamp: unset; }
         .expand { color: var(--olive); font-weight: bold; font-size: 11px; text-transform: uppercase; cursor: pointer; text-align: center; margin-top: 8px; display: block; }
         
-        .btn-buy { background: linear-gradient(180deg, #556b2f 0%, #3e4e22 100%); color: #fff; padding: 14px; border: none; border-radius: 10px; font-weight: bold; box-shadow: 0 4px 0 #283315; cursor: pointer; width: 100%; font-size: 15px;}
+        .btn-buy { background: linear-gradient(180deg, #556b2f 0%, #3e4e22 100%); color: #fff; padding: 14px; border: none; border-radius: 10px; font-weight: bold; box-shadow: 0 4px 0 #283315; cursor: pointer; width: 100%; font-size: 15px; margin-top: auto;}
         .btn-buy:active { transform: translateY(2px); box-shadow: none; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 1000; justify-content: center; align-items: center; touch-action: none;}
@@ -55,6 +58,8 @@
         .order-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;}
         .order-box { background: var(--panel); padding: 25px; border-radius: 16px; width: 100%; max-width: 400px; border: 1px solid var(--olive); box-shadow: 0 10px 30px rgba(0,0,0,0.8);}
         .order-box input, .order-box select { width: 100%; padding: 14px; margin-bottom: 12px; border-radius: 8px; background: #000; color: #fff; border: 1px solid #333; box-sizing: border-box; font-size: 15px;}
+        
+        #np-fields { display: block; }
         
         .empty-state { grid-column: span 2; text-align: center; padding: 40px 20px; color: #888; background: var(--panel); border-radius: 16px; border: 1px dashed #444;}
     </style>
@@ -91,10 +96,25 @@
     <div class="order-box">
         <h3 style="color:var(--olive); margin-top:0; text-align:center;">Оформлення замовлення</h3>
         <div id="order-item-name" style="margin-bottom:20px; font-size:15px; font-weight:bold; color:#fff; text-align:center;"></div>
+        
         <input type="text" id="c-name" placeholder="Ім'я та Прізвище" required>
         <input type="tel" id="c-phone" placeholder="Ваш телефон" required>
-        <select id="c-delivery"><option value="Нова Пошта">🚚 Нова Пошта</option><option value="Самовивіз">🏬 Самовивіз</option></select>
-        <select id="c-payment"><option value="Накладений платіж">💵 При отриманні (Накладений)</option><option value="На картку">💳 Переказ на картку</option></select>
+        
+        <select id="c-delivery" onchange="toggleDelivery()">
+            <option value="Нова Пошта">🚚 Нова Пошта</option>
+            <option value="Самовивіз">🏬 Самовивіз</option>
+        </select>
+        
+        <div id="np-fields">
+            <input type="text" id="c-city" placeholder="Місто / Населений пункт">
+            <input type="text" id="c-branch" placeholder="Номер відділення (напр. 15)">
+        </div>
+
+        <select id="c-payment">
+            <option value="Накладений платіж">💵 При отриманні (Накладений)</option>
+            <option value="На картку">💳 Переказ на картку</option>
+        </select>
+        
         <button class="btn-buy" onclick="submitOrder()">ПІДТВЕРДИТИ ЗАМОВЛЕННЯ</button>
         <button class="btn-buy" style="background:transparent; border:1px solid #555; box-shadow:none; margin-top:10px; color:#aaa;" onclick="closeOrder()">Скасувати</button>
     </div>
@@ -122,11 +142,9 @@
             const imgs = [p.image_url_1, p.image_url_2, p.image_url_3, p.image_url_4].filter(Boolean);
             const imgJson = JSON.stringify(imgs).replace(/"/g, '&quot;');
             
-            // Захист від помилок, якщо ІІ не вказав знос
             const badgeText = p.tread_depth || '';
             const badge = badgeText.includes('нови') || badgeText.includes('8 мм') ? '<div class="badge">🔥 Стан нової</div>' : '';
             
-            // Нова структура опису (Знос -> Тех. хар. -> Переваги)
             let descHtml = '';
             if (p.specs || p.benefits || p.tread_depth) {
                 descHtml = (p.tread_depth ? `<span style="color:var(--olive)"><b>Знос / Стан:</b></span> ${p.tread_depth}<br><br>` : '') +
@@ -149,7 +167,7 @@
                     <div class="price">${p.price} грн</div>
                     <div class="desc-box">
                         <div class="desc-text" id="desc-${p.id}">${descHtml}</div>
-                        <span class="expand" onclick="tgDesc('desc-${p.id}', this)">Розгорнути деталі ⬇</span>
+                        <span class="expand" onclick="tgDesc('desc-${p.id}', this)">Розгорнути деталі</span>
                     </div>
                     <button class="btn-buy" onclick="openOrder('${p.id}', '${p.title}', ${p.price})">ЗАМОВИТИ</button>
                 </div>`;
@@ -185,7 +203,7 @@
     window.tgDesc = function(id, btn) {
         const el = document.getElementById(id);
         const open = el.classList.toggle('open');
-        btn.innerText = open ? 'Згорнути ⬆' : 'Розгорнути деталі ⬇';
+        btn.innerText = open ? 'Згорнути' : 'Розгорнути деталі';
     }
 
     function filter() {
@@ -198,24 +216,62 @@
         render(c === 'Все' ? items : items.filter(i => i.category === c));
     }
 
+    /* Логіка Замовлення */
     window.openOrder = function(id, title, price) {
         activeOrderProduct = { id, title, price };
         document.getElementById('order-item-name').innerText = `${title}\n${price} грн`;
         document.getElementById('orderModal').style.display = 'flex';
     }
-    window.closeOrder = function() { document.getElementById('orderModal').style.display = 'none'; }
+    
+    window.closeOrder = function() { 
+        document.getElementById('orderModal').style.display = 'none'; 
+    }
+    
+    window.toggleDelivery = function() {
+        const delType = document.getElementById('c-delivery').value;
+        document.getElementById('np-fields').style.display = delType === 'Нова Пошта' ? 'block' : 'none';
+    }
     
     window.submitOrder = async function() {
         const name = document.getElementById('c-name').value;
         const phone = document.getElementById('c-phone').value;
+        const payment = document.getElementById('c-payment').value;
+        let delivery = document.getElementById('c-delivery').value;
+        
         if(!name || !phone) return alert("Введіть ПІБ та телефон!");
 
+        // Якщо обрана Нова Пошта, збираємо місто та відділення
+        if(delivery === 'Нова Пошта') {
+            const city = document.getElementById('c-city').value;
+            const branch = document.getElementById('c-branch').value;
+            if(!city || !branch) return alert("Введіть місто та номер відділення!");
+            delivery = `Нова Пошта (м. ${city}, Відд. №${branch})`;
+        }
+
+        // 1. Зберігаємо в базу Supabase
         await sb.from('orders').insert([{
             product_id: activeOrderProduct.id, product_title: activeOrderProduct.title, price: activeOrderProduct.price,
-            customer_name: name, customer_phone: phone, delivery: document.getElementById('c-delivery').value, payment: document.getElementById('c-payment').value
+            customer_name: name, customer_phone: phone, delivery: delivery, payment: payment
         }]);
 
+        // 2. Відправляємо повідомлення в Telegram (на майбутнє)
+        const tgBotToken = "ТВОЙ_ТОКЕН"; // Заміни на токен від BotFather
+        const tgChatId = "ТВОЙ_ID";      // Заміни на свій Chat ID
+        
+        if(tgBotToken !== "ТВОЙ_ТОКЕН") {
+            const msg = `🔥 Нове замовлення!\n\n🛒 Товар: ${activeOrderProduct.title}\n💰 Сума: ${activeOrderProduct.price} грн\n\n👤 Клієнт: ${name}\n📞 Телефон: ${phone}\n🚚 Доставка: ${delivery}\n💳 Оплата: ${payment}`;
+            fetch(`https://api.telegram.org/bot${tgBotToken}/sendMessage?chat_id=${tgChatId}&text=${encodeURIComponent(msg)}`)
+                .catch(err => console.error("Помилка Telegram:", err));
+        }
+
         alert("✅ Замовлення успішно оформлено! Ми з вами зв'яжемося.");
+        
+        // Очищаємо поля
+        document.getElementById('c-name').value = '';
+        document.getElementById('c-phone').value = '';
+        document.getElementById('c-city').value = '';
+        document.getElementById('c-branch').value = '';
+        
         closeOrder();
     }
 </script>
