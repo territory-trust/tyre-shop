@@ -240,7 +240,6 @@
         
         if(!name || !phone) return alert("Введіть ПІБ та телефон!");
 
-        // Якщо обрана Нова Пошта, збираємо місто та відділення
         if(delivery === 'Нова Пошта') {
             const city = document.getElementById('c-city').value;
             const branch = document.getElementById('c-branch').value;
@@ -248,15 +247,14 @@
             delivery = `Нова Пошта (м. ${city}, Відд. №${branch})`;
         }
 
-        // 1. Зберігаємо в базу Supabase
+        // ДОДАНО: status: 'Новий' - тепер замовлення з'явиться в Кабінеті!
         await sb.from('orders').insert([{
             product_id: activeOrderProduct.id, product_title: activeOrderProduct.title, price: activeOrderProduct.price,
-            customer_name: name, customer_phone: phone, delivery: delivery, payment: payment
+            customer_name: name, customer_phone: phone, delivery: delivery, payment: payment, status: 'Новий'
         }]);
 
-        // 2. Відправляємо повідомлення в Telegram (на майбутнє)
-        const tgBotToken = "ТВОЙ_ТОКЕН"; // Заміни на токен від BotFather
-        const tgChatId = "ТВОЙ_ID";      // Заміни на свій Chat ID
+        const tgBotToken = "ТВОЙ_ТОКЕН"; 
+        const tgChatId = "ТВОЙ_ID";      
         
         if(tgBotToken !== "ТВОЙ_ТОКЕН") {
             const msg = `🔥 Нове замовлення!\n\n🛒 Товар: ${activeOrderProduct.title}\n💰 Сума: ${activeOrderProduct.price} грн\n\n👤 Клієнт: ${name}\n📞 Телефон: ${phone}\n🚚 Доставка: ${delivery}\n💳 Оплата: ${payment}`;
@@ -266,7 +264,6 @@
 
         alert("✅ Замовлення успішно оформлено! Ми з вами зв'яжемося.");
         
-        // Очищаємо поля
         document.getElementById('c-name').value = '';
         document.getElementById('c-phone').value = '';
         document.getElementById('c-city').value = '';
