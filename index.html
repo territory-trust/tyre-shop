@@ -247,11 +247,18 @@
             delivery = `Нова Пошта (м. ${city}, Відд. №${branch})`;
         }
 
-        // ДОДАНО: status: 'Новий' - тепер замовлення з'явиться в Кабінеті!
-        await sb.from('orders').insert([{
+        // РОЗУМНЕ ВІДПРАВЛЕННЯ З ПЕРЕХОПЛЕННЯМ ПОМИЛОК
+        const { error } = await sb.from('orders').insert([{
             product_id: activeOrderProduct.id, product_title: activeOrderProduct.title, price: activeOrderProduct.price,
             customer_name: name, customer_phone: phone, delivery: delivery, payment: payment, status: 'Новий'
         }]);
+
+        // Якщо база не прийняла замовлення - сайт скаже чому
+        if (error) {
+            console.error("Помилка БД:", error);
+            alert("❌ Помилка бази даних: " + error.message);
+            return; // Зупиняємо скрипт!
+        }
 
         const tgBotToken = "ТВОЙ_ТОКЕН"; 
         const tgChatId = "ТВОЙ_ID";      
