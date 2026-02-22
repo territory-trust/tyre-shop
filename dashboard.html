@@ -35,16 +35,12 @@
         .btn:active { transform: translateY(2px); }
         .btn-green { background: var(--olive); color: #000; }
         
-        /* Стиль для масового видалення (червоний) */
         .btn-red { background: rgba(255, 68, 68, 0.15); color: var(--red); border: none; }
-
-        /* НОВИЙ стиль для офлайн продажу (тонка зелена рамка) */
         .btn-outline-green { background: transparent; color: var(--olive); border: 1px solid var(--olive); }
         
         .btn-del-icon { position: absolute; top: 12px; right: 12px; background: transparent; color: var(--red); border: none; font-size: 18px; cursor: pointer; padding: 5px; }
         
         .filters { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; }
-        
         select { background: #1b1e24; color: #fff; border: none; padding: 10px; border-radius: 8px; outline: none; flex: 1; font-weight: 500;}
         
         .price-edit { background: #000; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 8px; width: 80px; margin-right: 10px; font-weight: bold; }
@@ -68,7 +64,10 @@
     <div class="tab" onclick="switchTab('stats', this)">📊 Статистика</div>
 </div>
 
-<div id="orders" class="tab-content active"><div id="orders-list"><div style="text-align:center; padding:20px; color:#888;">⏳ Завантаження...</div></div></div>
+<div id="orders" class="tab-content active">
+    <button class="btn btn-outline-green" style="margin-bottom: 15px;" onclick="fetchData()">🔄 Оновити список замовлень</button>
+    <div id="orders-list"><div style="text-align:center; padding:20px; color:#888;">⏳ Завантаження...</div></div>
+</div>
 
 <div id="stock" class="tab-content">
     <div class="bulk-bar" id="bulk-bar">
@@ -113,6 +112,9 @@
     }
 
     async function fetchData() {
+        const ordBox = document.getElementById('orders-list');
+        if(ordBox.innerHTML.includes('Немає нових')) ordBox.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">⏳ Оновлення...</div>';
+
         const [ordRes, prodRes] = await Promise.all([
             sb.from('orders').select('*').order('created_at', {ascending: false}),
             sb.from('products').select('*').order('created_at', {ascending: false})
@@ -132,17 +134,56 @@
         if(active.length === 0) return box.innerHTML = '<div class="card" style="text-align:center; color:#888;">Немає нових замовлень</div>';
         
         active.forEach(o => {
+            const cleanPhone = (o.customer_phone || '').replace(/\D/g, '');
+            const isCard = (o.payment || '').includes('картку');
+            const savedCard = localStorage.getItem('my_saved_card') || '';
+            
+            // Формуємо блок для оплати карткою (з'являється тільки за потреби)
+            let cardBlock = '';
+            if (isCard) {
+                cardBlock = `
+                <div style="display:flex; align-items:center; gap:8px; margin-top:10px; background:#1b1e24; padding:10px; border-radius:8px; border:1px dashed var(--olive);">
+                    <span style="font-size:20px;">💳</span>
+                    <input type="text" id="card-${o.id}" placeholder="Ваша картка" value="${savedCard}" style="background:#000; color:#fff; border:1px solid #444; padding:8px; border-radius:6px; flex:1; font-size:14px; outline:none; font-weight:bold;" oninput="localStorage.setItem('my_saved_card', this.value)">
+                    <button class="btn-green" style="padding:8px 12px; margin:0; width:auto; font-size:12px; border-radius:6px;" onclick="sendCardTg('${o.id}', 'card-${o.id}')">✈️ У Telegram</button>
+                </div>`;
+            }
+
             box.innerHTML += `
                 <div class="card">
                     <div class="card-header">🛒 ${o.product_title}</div>
                     <div class="card-info">
-                        <b>Клієнт:</b> ${o.customer_name} (${o.customer_phone})<br>
-                        <b>Доставка:</b> ${o.delivery} | <b>Оплата:</b> ${o.payment}<br>
+                        <b>Клієнт:</b> ${o.customer_name} <br>
+                        
+                        <div style="display:flex; align-items:center; gap:10px; margin: 8px 0;">
+                            <b style="font-size:16px; color:#fff;">${o.customer_phone}</b>
+                            <a href="tel:${cleanPhone}" class="btn-outline-green" style="padding:6px 12px; text-decoration:none; border-radius:8px; font-weight:bold; font-size:13px; display:inline-block;">📞 Подзвонити</a>
+                        </div>
+                        
+                        <b>Доставка:</b> ${o.delivery} <br>
+                        <b>Оплата:</b> <span style="color:${isCard ? 'var(--olive)' : '#aaa'}">${o.payment}</span><br>
                         💰 Сума: <b style="color:var(--olive); font-size:16px">${o.price} грн</b>
+                        
+                        ${cardBlock}
                     </div>
                     <button class="btn btn-green" onclick="completeOrder('${o.id}', '${o.product_id}')">✅ ВИКОНАНО (Відправити в продані)</button>
                 </div>`;
         });
+    }
+
+    // Функція відправки реквізитів у Телеграм
+    window.sendCardTg = function(orderId, inputId) {
+        const o = allOrders.find(x => x.id === orderId);
+        const card = document.getElementById(inputId).value;
+        if(!card) return alert("Введіть номер картки!");
+        
+        let tgPhone = (o.customer_phone || '').replace(/\D/g, '');
+        if(tgPhone.startsWith('0')) tgPhone = '38' + tgPhone;
+        if(!tgPhone.startsWith('+')) tgPhone = '+' + tgPhone;
+        
+        const msg = `Доброго дня! Ваше замовлення: ${o.product_title}.\nДо сплати: ${o.price} грн.\n💳 Реквізити для оплати: ${card}`;
+        const url = `https://t.me/${tgPhone}?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
     }
 
     async function completeOrder(oId, pId) {
