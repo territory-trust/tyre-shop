@@ -128,12 +128,12 @@
         renderStats();
     }
 
-    // Алгоритм автоформатування номера картки з пробілами
-    window.formatCard = function(input) {
-        let val = input.value.replace(/\\D/g, ''); // Видаляємо всі не-цифри
-        val = val.replace(/(\\d{4})(?=\\d)/g, '$1 '); // Додаємо пробіл після кожних 4 цифр
-        input.value = val;
-        localStorage.setItem('my_saved_card', val); // Зберігаємо вже красивий формат
+    // Функція форматування: розбиває номер по 4 цифри
+    window.formatCardInput = function(el) {
+        let val = el.value.replace(/\D/g, ''); 
+        let formatted = val.match(/.{1,4}/g)?.join(' ') || ''; 
+        el.value = formatted.substring(0, 19); 
+        localStorage.setItem('my_saved_card', el.value); 
     }
 
     function renderOrders() {
@@ -142,16 +142,22 @@
         if(active.length === 0) return box.innerHTML = '<div class="card" style="text-align:center; color:#888;">Немає нових замовлень</div>';
         
         active.forEach(o => {
-            const cleanPhone = (o.customer_phone || '').replace(/\\D/g, '');
+            const cleanPhone = (o.customer_phone || '').replace(/\D/g, '');
             const isCard = (o.payment || '').includes('картку');
-            const savedCard = localStorage.getItem('my_saved_card') || '';
+            
+            // Розумне витягування збереженої картки з авто-форматуванням
+            let savedCard = localStorage.getItem('my_saved_card') || '';
+            let cleanSavedCard = savedCard.replace(/\D/g, '');
+            savedCard = cleanSavedCard.match(/.{1,4}/g)?.join(' ') || '';
+            savedCard = savedCard.substring(0, 19);
             
             let cardBlock = '';
             if (isCard) {
+                // Змінено type="text" на type="tel" для цифрової клавіатури
                 cardBlock = `
                 <div style="display:flex; align-items:center; gap:8px; margin-top:10px; background:#1b1e24; padding:10px; border-radius:8px; border:1px dashed var(--olive);">
                     <span style="font-size:20px;">💳</span>
-                    <input type="tel" id="card-${o.id}" placeholder="0000 0000 0000 0000" maxlength="19" value="${savedCard}" style="background:#000; color:#fff; border:1px solid #444; padding:8px; border-radius:6px; flex:1; font-size:14px; outline:none; font-weight:bold; letter-spacing:1px;" oninput="formatCard(this)">
+                    <input type="tel" id="card-${o.id}" placeholder="0000 0000 0000 0000" value="${savedCard}" style="background:#000; color:#fff; border:1px solid #444; padding:8px; border-radius:6px; flex:1; font-size:15px; outline:none; font-weight:bold; letter-spacing:1px;" oninput="formatCardInput(this)">
                     <button class="btn-green" style="padding:8px 12px; margin:0; width:auto; font-size:12px; border-radius:6px;" onclick="sendCardTg('${o.id}', 'card-${o.id}')">✈️ У Telegram</button>
                 </div>`;
             }
@@ -183,7 +189,7 @@
         const card = document.getElementById(inputId).value;
         if(!card) return alert("Введіть номер картки!");
         
-        let tgPhone = (o.customer_phone || '').replace(/\\D/g, '');
+        let tgPhone = (o.customer_phone || '').replace(/\D/g, '');
         if(tgPhone.startsWith('0')) tgPhone = '38' + tgPhone;
         if(!tgPhone.startsWith('+')) tgPhone = '+' + tgPhone;
         
