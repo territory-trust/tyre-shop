@@ -3,103 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Налаштування CRM — Pilot</title>
+    <title>Налаштування Системи — Магазин Шин</title>
     <style>
-        body {
-            background-color: #0d0d0d;
-            color: #e0e0e0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            padding: 20px;
+        /* БАГАТИЙ ОКСАМИТОВИЙ СТИЛЬ */
+        :root {
+            --bg: #0a0c10;
+            --panel: #14171c;
+            --olive: #8fbc55;
+            --text-bright: #ffffff;
+            --text-main: #e5e7eb;
+            --text-muted: #aaa;
+            --border: #2a2e35;
         }
-        .container {
-            background: linear-gradient(145deg, #1a1a1a, #121212);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 10px 10px 20px #050505, -5px -5px 15px #1f1f1f;
-            width: 100%;
-            max-width: 400px;
+        body { 
+            background: var(--bg); 
+            color: var(--text-main); 
+            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            font-size: 18px; 
+            -webkit-font-smoothing: antialiased; 
+            display: flex; 
+            justify-content: center; 
         }
-        h2 { text-align: center; color: #d4af37; font-weight: 300; }
-        label { display: block; margin: 15px 0 5px; font-size: 14px; color: #888; }
-        input {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 10px;
-            background: #151515;
-            color: white;
-            box-shadow: inset 2px 2px 5px #000, inset -1px -1px 2px #222;
-            box-sizing: border-box;
+        .container { width: 100%; max-width: 500px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .title { font-size: 26px; font-weight: 900; color: var(--text-bright); margin: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+        .subtitle { font-size: 16px; color: var(--olive); margin-top: 5px; font-weight: bold; text-transform: uppercase; }
+
+        .card { 
+            background: var(--panel); 
+            padding: 25px; 
+            border-radius: 16px; 
+            border: 1px solid var(--border); 
+            margin-bottom: 20px; 
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.02), 0 8px 20px rgba(0,0,0,0.5); 
         }
-        button {
-            width: 100%;
-            margin-top: 25px;
-            padding: 15px;
-            border: none;
-            border-radius: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 16px; font-weight: bold; color: var(--text-main); margin-bottom: 8px; }
+        .form-group input { 
+            width: 100%; 
+            background: #000; 
+            color: var(--text-bright); 
+            border: 1px solid #444; 
+            padding: 14px; 
+            border-radius: 8px; 
+            font-size: 18px; 
+            font-weight: bold; 
+            outline: none; 
+            box-sizing: border-box; 
+            transition: 0.2s; 
         }
-        .btn-save {
-            background: linear-gradient(145deg, #b8860b, #8b6508);
-            color: white;
-            box-shadow: 4px 4px 10px #050505;
+        .form-group input:focus { border-color: var(--olive); box-shadow: 0 0 8px rgba(143, 188, 85, 0.3); }
+        .hint { font-size: 14px; color: var(--text-muted); margin-top: 5px; display: block; }
+
+        /* Об'ємні Кнопки */
+        .btn { 
+            padding: 16px; 
+            border-radius: 10px; 
+            border: none; 
+            font-weight: bold; 
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 18px; 
+            transition: 0.1s; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            margin-bottom: 15px;
         }
-        .btn-test {
-            background: linear-gradient(145deg, #2c3e50, #000000);
-            color: #d4af37;
-            margin-top: 15px;
-            box-shadow: 4px 4px 10px #050505;
-        }
-        button:active {
-            transform: scale(0.98);
-            box-shadow: inset 2px 2px 5px #000;
-        }
+        .btn:active { transform: translateY(4px); box-shadow: none !important; }
+        
+        .btn-green { background: linear-gradient(180deg, #556b2f 0%, #3e4e22 100%); color: #fff; box-shadow: 0 5px 0 #283315; }
+        .btn-blue { background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%); color: #fff; box-shadow: 0 5px 0 #1e40af; margin-bottom: 0;}
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Налаштування CRM</h2>
-        
-        <label>Telegram Бот Токен:</label>
-        <input type="password" id="tgToken" placeholder="Вставте токен від BotFather">
-        
-        <label>Ваш Telegram Chat ID:</label>
-        <input type="text" id="tgChatId" placeholder="Ваш ID: 1060951167">
-
-        <button class="btn-save" onclick="saveSettings()">Зберегти налаштування</button>
-        <button class="btn-test" onclick="testTelegram()">Перевірити Telegram</button>
+<div class="container">
+    <div class="header">
+        <h1 class="title">НАЛАШТУВАННЯ</h1>
+        <p class="subtitle">МАГАЗИН ШИН</p>
     </div>
 
-    <script>
-        function saveSettings() {
-            const token = document.getElementById('tgToken').value;
-            const chatId = document.getElementById('tgChatId').value;
-            localStorage.setItem('pilot_tg_token', token);
-            localStorage.setItem('pilot_tg_chatid', chatId);
-            alert('Налаштування збережено локально!');
+    <div class="card">
+        <div class="form-group">
+            <label>Telegram Bot Token</label>
+            <input type="password" id="tgToken" placeholder="Вставте токен від BotFather">
+            <span class="hint">Наприклад: 8710822645:AAGt...</span>
+        </div>
+        <div class="form-group">
+            <label>Telegram Chat ID</label>
+            <input type="password" id="tgChatId" placeholder="Ваш ID">
+            <span class="hint">Ваш номер: 1060951167</span>
+        </div>
+        <button class="btn btn-green" onclick="saveSettings()">💾 ЗБЕРЕГТИ НАЛАШТУВАННЯ</button>
+        <button class="btn btn-blue" onclick="testTelegram()">Перевірити Telegram</button>
+    </div>
+</div>
+
+<script>
+    window.onload = function() {
+        if(localStorage.getItem('tyreshop_tg_token')) document.getElementById('tgToken').value = localStorage.getItem('tyreshop_tg_token');
+        if(localStorage.getItem('tyreshop_tg_chatid')) document.getElementById('tgChatId').value = localStorage.getItem('tyreshop_tg_chatid');
+    };
+
+    function saveSettings() {
+        localStorage.setItem('tyreshop_tg_token', document.getElementById('tgToken').value.trim());
+        localStorage.setItem('tyreshop_tg_chatid', document.getElementById('tgChatId').value.trim());
+        alert('✅ Налаштування успішно збережено у вашому браузері!');
+    }
+
+    async function testTelegram() {
+        const token = document.getElementById('tgToken').value.trim();
+        const chatId = document.getElementById('tgChatId').value.trim();
+
+        if (!token || !chatId) {
+            alert('❌ Будь ласка, введіть Token та Chat ID');
+            return;
         }
 
-        async function testTelegram() {
-            const token = localStorage.getItem('pilot_tg_token');
-            const chatId = localStorage.getItem('pilot_tg_chatid');
-            if (!token || !chatId) return alert('Спочатку збережіть дані!');
-
-            const text = "✅ Pilot CRM: Зв'язок встановлено! Замовлення будуть приходити сюди.";
-            const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(text)}`;
-            
-            try {
-                await fetch(url);
-                alert('Повідомлення відправлено! Перевірте Telegram.');
-            } catch (e) {
-                alert('Помилка! Перевірте правильність токена.');
+        const text = "✅ Магазин Шин: Зв'язок встановлено! Замовлення будуть приходити сюди.";
+        const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(text)}`;
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data.ok) {
+                alert('✅ Повідомлення відправлено! Перевірте ваш Telegram.');
+            } else {
+                alert('❌ Помилка Telegram: ' + data.description);
             }
+        } catch (error) {
+            alert('❌ Помилка з\'єднання. Перевірте інтернет.');
         }
-    </script>
+    }
+</script>
 </body>
 </html>
