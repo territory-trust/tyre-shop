@@ -260,10 +260,12 @@
             return; // Зупиняємо скрипт!
         }
 
-        const tgBotToken = "ТВОЙ_ТОКЕН"; 
-        const tgChatId = "ТВОЙ_ID";      
+        // ОТРИМУЄМО КЛЮЧІ З ПАМ'ЯТІ (налаштовані через settings.html)
+        const tgBotToken = localStorage.getItem('tyreshop_tg_token'); 
+        const tgChatId = localStorage.getItem('tyreshop_tg_chatid');      
         
-        if(tgBotToken !== "ТВОЙ_ТОКЕН") {
+        // ВІДПРАВКА В TELEGRAM (якщо ключі існують)
+        if(tgBotToken && tgChatId) {
             const msg = `🔥 Нове замовлення!\n\n🛒 Товар: ${activeOrderProduct.title}\n💰 Сума: ${activeOrderProduct.price} грн\n\n👤 Клієнт: ${name}\n📞 Телефон: ${phone}\n🚚 Доставка: ${delivery}\n💳 Оплата: ${payment}`;
             fetch(`https://api.telegram.org/bot${tgBotToken}/sendMessage?chat_id=${tgChatId}&text=${encodeURIComponent(msg)}`)
                 .catch(err => console.error("Помилка Telegram:", err));
