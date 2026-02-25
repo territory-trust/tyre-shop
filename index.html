@@ -98,7 +98,7 @@
         <div id="order-item-name" style="margin-bottom:20px; font-size:15px; font-weight:bold; color:#fff; text-align:center;"></div>
         
         <input type="text" id="c-name" placeholder="Ім'я та Прізвище" required>
-        <input type="tel" id="c-phone" placeholder="Ваш телефон" required>
+        <input type="tel" id="c-phone" placeholder="098 588 7331" required oninput="formatPhoneInput(this)">
         
         <select id="c-delivery" onchange="toggleDelivery()">
             <option value="Нова Пошта">🚚 Нова Пошта</option>
@@ -232,6 +232,24 @@
         document.getElementById('np-fields').style.display = delType === 'Нова Пошта' ? 'block' : 'none';
     }
     
+    // Функція форматування номера телефону (098 588 7331)
+    window.formatPhoneInput = function(el) {
+        let val = el.value.replace(/\D/g, ''); 
+        
+        // Якщо починається з 38, прибираємо, щоб звести до стандартних 10 цифр
+        if (val.length > 10 && val.startsWith('38')) {
+            val = val.substring(2);
+        }
+        if (val.length > 10) val = val.substring(0, 10);
+        
+        let res = '';
+        if (val.length > 0) res += val.substring(0, 3);
+        if (val.length > 3) res += ' ' + val.substring(3, 6);
+        if (val.length > 6) res += ' ' + val.substring(6, 10);
+        
+        el.value = res;
+    }
+    
     window.submitOrder = async function() {
         const name = document.getElementById('c-name').value;
         const phone = document.getElementById('c-phone').value;
@@ -247,24 +265,22 @@
             delivery = `Нова Пошта (м. ${city}, Відд. №${branch})`;
         }
 
-        // РОЗУМНЕ ВІДПРАВЛЕННЯ З ПЕРЕХОПЛЕННЯМ ПОМИЛОК
         const { error } = await sb.from('orders').insert([{
             product_id: activeOrderProduct.id, product_title: activeOrderProduct.title, price: activeOrderProduct.price,
             customer_name: name, customer_phone: phone, delivery: delivery, payment: payment, status: 'Новий'
         }]);
 
-        // Якщо база не прийняла замовлення - сайт скаже чому
         if (error) {
             console.error("Помилка БД:", error);
             alert("❌ Помилка бази даних: " + error.message);
-            return; // Зупиняємо скрипт!
+            return; 
         }
 
-        // ОТРИМУЄМО КЛЮЧІ З ПАМ'ЯТІ (налаштовані через settings.html)
-        const tgBotToken = localStorage.getItem('tyreshop_tg_token'); 
-        const tgChatId = localStorage.getItem('tyreshop_tg_chatid');      
+        // ВАЖЛИВО: Жорстко прописані ключі для відправки з будь-якого пристрою
+        const tgBotToken = "8710822645:AAGtAanhJ3LYC-SzxoAUB2vSlE1pHjPqSpA"; 
+        const tgChatId = "1060951167";      
         
-        // ВІДПРАВКА В TELEGRAM (якщо ключі існують)
+        // ВІДПРАВКА В TELEGRAM
         if(tgBotToken && tgChatId) {
             const msg = `🔥 Нове замовлення!\n\n🛒 Товар: ${activeOrderProduct.title}\n💰 Сума: ${activeOrderProduct.price} грн\n\n👤 Клієнт: ${name}\n📞 Телефон: ${phone}\n🚚 Доставка: ${delivery}\n💳 Оплата: ${payment}`;
             fetch(`https://api.telegram.org/bot${tgBotToken}/sendMessage?chat_id=${tgChatId}&text=${encodeURIComponent(msg)}`)
