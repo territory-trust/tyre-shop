@@ -236,7 +236,6 @@
     window.formatPhoneInput = function(el) {
         let val = el.value.replace(/\D/g, ''); 
         
-        // Якщо починається з 38, прибираємо, щоб звести до стандартних 10 цифр
         if (val.length > 10 && val.startsWith('38')) {
             val = val.substring(2);
         }
@@ -276,15 +275,19 @@
             return; 
         }
 
-        // ВАЖЛИВО: Жорстко прописані ключі для відправки з будь-якого пристрою
         const tgBotToken = "8710822645:AAGtAanhJ3LYC-SzxoAUB2vSlE1pHjPqSpA"; 
         const tgChatId = "1060951167";      
         
-        // ВІДПРАВКА В TELEGRAM
         if(tgBotToken && tgChatId) {
             const msg = `🔥 Нове замовлення!\n\n🛒 Товар: ${activeOrderProduct.title}\n💰 Сума: ${activeOrderProduct.price} грн\n\n👤 Клієнт: ${name}\n📞 Телефон: ${phone}\n🚚 Доставка: ${delivery}\n💳 Оплата: ${payment}`;
-            fetch(`https://api.telegram.org/bot${tgBotToken}/sendMessage?chat_id=${tgChatId}&text=${encodeURIComponent(msg)}`)
-                .catch(err => console.error("Помилка Telegram:", err));
+            const tgUrl = `https://api.telegram.org/bot${tgBotToken}/sendMessage?chat_id=${tgChatId}&text=${encodeURIComponent(msg)}`;
+            
+            try {
+                // ВАЖЛИВО: await гарантує, що повідомлення відправиться ДО появи alert
+                await fetch(tgUrl); 
+            } catch (err) {
+                console.error("Помилка Telegram:", err);
+            }
         }
 
         alert("✅ Замовлення успішно оформлено! Ми з вами зв'яжемося.");
