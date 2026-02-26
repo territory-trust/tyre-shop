@@ -270,13 +270,12 @@
         }
 
         const tgBotToken = "8710822645:AAGtAanhJ3LYC-SzxoAUB2vSlE1pHjPqSpA"; 
-        const tgChatId = "1060951167";      
+        const tgChatId = "5268752672"; // ТВОЙ НАСТОЯЩИЙ ID!
         
         if(tgBotToken && tgChatId) {
             const msg = `🔥 Нове замовлення!\n\n🛒 Товар: ${activeOrderProduct.title}\n💰 Сума: ${activeOrderProduct.price} грн\n\n👤 Клієнт: ${name}\n📞 Телефон: ${phone}\n🚚 Доставка: ${delivery}\n💳 Оплата: ${payment}`;
             
             try {
-                // Надійний POST-запит замість GET
                 const response = await fetch(`https://api.telegram.org/bot${tgBotToken}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -285,7 +284,6 @@
                 
                 const data = await response.json();
                 
-                // ДЕТЕКТОР БРЕХНІ: Якщо Телеграм відмовляється, покажемо чому
                 if (!data.ok) {
                     alert(`⚠️ Замовлення в базі збережено, але Телеграм ВІДХИЛИВ відправку!\nПричина: ${data.description}\n(Можливо помилка в Chat ID)`);
                 }
