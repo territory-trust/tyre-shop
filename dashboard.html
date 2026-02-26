@@ -129,7 +129,6 @@
         renderStats();
     }
 
-    // Функція форматування: розбиває номер по 4 цифри
     window.formatCardInput = function(el) {
         let val = el.value.replace(/\D/g, ''); 
         let formatted = val.match(/.{1,4}/g)?.join(' ') || ''; 
@@ -146,7 +145,6 @@
             const cleanPhone = (o.customer_phone || '').replace(/\D/g, '');
             const isCard = (o.payment || '').includes('картку');
             
-            // Розумне витягування збереженої картки з авто-форматуванням
             let savedCard = localStorage.getItem('my_saved_card') || '';
             let cleanSavedCard = savedCard.replace(/\D/g, '');
             savedCard = cleanSavedCard.match(/.{1,4}/g)?.join(' ') || '';
@@ -154,7 +152,6 @@
             
             let cardBlock = '';
             if (isCard) {
-                // Змінено type="text" на type="tel" для цифрової клавіатури
                 cardBlock = `
                 <div style="display:flex; align-items:center; gap:8px; margin-top:10px; background:#1b1e24; padding:10px; border-radius:8px; border:1px dashed var(--olive);">
                     <span style="font-size:20px;">💳</span>
@@ -323,12 +320,15 @@
             limitDate.setHours(0, 0, 0, 0);
         }
 
-        const prods = allProducts.filter(p => new Date(p.created_at) >= limitDate);
-        const ords = allOrders.filter(o => new Date(o.created_at) >= limitDate);
-
-        const soldProds = prods.filter(p => p.status === 'Продано');
-        const activeProds = prods.filter(p => p.status === 'В наявності');
+        // Продукти на складі фільтруємо за датою їх створення
+        const activeProds = allProducts.filter(p => p.status === 'В наявності' && new Date(p.created_at) >= limitDate);
         
+        // Замовлення фільтруємо строго за датою створення самого замовлення (фактична покупка)
+        const ords = allOrders.filter(o => new Date(o.created_at) >= limitDate);
+        
+        // Офлайн продажі
+        const soldProds = allProducts.filter(p => p.status === 'Продано' && new Date(p.created_at) >= limitDate);
+
         let activeSum = 0; 
         let activeTiresCount = 0;
         activeProds.forEach(p => { 
@@ -338,12 +338,32 @@
 
         let soldSum = 0; 
         let soldTiresCount = 0;
-        
-        ords.filter(o => o.status === 'Виконано').forEach(o => soldSum += Number(o.price));
-        
+        const brands = {}; const sizes = {};
+
+        // 1. Рахуємо продажі з онлайн-замовлень (витягуємо кількість прямо з назви замовлення)
+        ords.filter(o => o.status === 'Виконано').forEach(o => {
+            soldSum += Number(o.price);
+            const qty = getQty(o.product_title);
+            soldTiresCount += qty;
+
+            const origProd = allProducts.find(p => p.id === o.product_id);
+            const brand = origProd ? (origProd.brand || 'Невідомо') : 'Невідомо';
+            const size = origProd ? (origProd.category || 'Інше') : 'Інше';
+            
+            brands[brand] = (brands[brand] || 0) + qty;
+            sizes[size] = (sizes[size] || 0) + qty;
+        });
+
+        // 2. Рахуємо офлайн-продажі (ті, що є в базі як продані, але без замовлення в системі)
         soldProds.forEach(p => { 
-            soldTiresCount += getQty(p.quantity);
-            if(!ords.find(o => o.product_id === p.id)) soldSum += Number(p.price); 
+            if(!ords.find(o => o.product_id === p.id)) {
+                soldSum += Number(p.price); 
+                const qty = getQty(p.quantity);
+                soldTiresCount += qty;
+                
+                brands[p.brand || 'Невідомо'] = (brands[p.brand || 'Невідомо'] || 0) + qty;
+                sizes[p.category || 'Інше'] = (sizes[p.category || 'Інше'] || 0) + qty;
+            }
         });
 
         document.getElementById('stats-grid').innerHTML = `
@@ -352,13 +372,6 @@
             <div class="stat-box" style="border-color:var(--olive)">Продано шт.<b>${soldTiresCount}</b></div>
             <div class="stat-box" style="border-color:var(--olive)">Продажі на суму<b>${soldSum} грн</b></div>
         `;
-
-        const brands = {}; const sizes = {};
-        soldProds.forEach(p => {
-            const q = getQty(p.quantity);
-            brands[p.brand || 'Невідомо'] = (brands[p.brand || 'Невідомо'] || 0) + q;
-            sizes[p.category || 'Інше'] = (sizes[p.category || 'Інше'] || 0) + q;
-        });
 
         if(chart1) chart1.destroy(); if(chart2) chart2.destroy();
         
