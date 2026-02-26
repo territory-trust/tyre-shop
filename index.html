@@ -24,7 +24,6 @@
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px; max-width: 900px; margin: auto; }
         @media (min-width: 600px) { .grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
         
-        /* Вирівнювання карток та кнопок по низу */
         .card { background: var(--panel); border-radius: 16px; border: 1px solid #2a2e35; padding: 12px; display: flex; flex-direction: column; position: relative; height: 100%; box-sizing: border-box;}
         .badge { position: absolute; top: 20px; right: 20px; background: var(--olive); color: #000; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; z-index: 10;}
         
@@ -33,11 +32,9 @@
         .sub-p { height: 70px; background: #000; border-radius: 6px; overflow: hidden; cursor: pointer; border: 1px solid #222;}
         img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* Фіксована висота заголовка */
         .title { font-weight: 800; font-size: 14px; color: #fff; line-height: 1.3; margin-bottom: 8px; min-height: 55px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
         .price { color: var(--olive); font-size: 20px; font-weight: 900; margin-bottom: 12px; }
         
-        /* Опис займає весь вільний простір, відштовхуючи кнопку */
         .desc-box { background: #0f1114; padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #222; font-size: 13px; color: #bbb; line-height: 1.5; flex-grow: 1;}
         .desc-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .desc-text.open { -webkit-line-clamp: unset; }
@@ -174,7 +171,6 @@
         });
     }
 
-    /* Галерея та Свайпи */
     let touchStartX = 0;
     document.getElementById('gallery').addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX);
     document.getElementById('gallery').addEventListener('touchend', e => {
@@ -216,7 +212,6 @@
         render(c === 'Все' ? items : items.filter(i => i.category === c));
     }
 
-    /* Логіка Замовлення */
     window.openOrder = function(id, title, price) {
         activeOrderProduct = { id, title, price };
         document.getElementById('order-item-name').innerText = `${title}\n${price} грн`;
@@ -232,7 +227,6 @@
         document.getElementById('np-fields').style.display = delType === 'Нова Пошта' ? 'block' : 'none';
     }
     
-    // Функція форматування номера телефону (098 588 7331)
     window.formatPhoneInput = function(el) {
         let val = el.value.replace(/\D/g, ''); 
         
@@ -280,11 +274,21 @@
         
         if(tgBotToken && tgChatId) {
             const msg = `🔥 Нове замовлення!\n\n🛒 Товар: ${activeOrderProduct.title}\n💰 Сума: ${activeOrderProduct.price} грн\n\n👤 Клієнт: ${name}\n📞 Телефон: ${phone}\n🚚 Доставка: ${delivery}\n💳 Оплата: ${payment}`;
-            const tgUrl = `https://api.telegram.org/bot${tgBotToken}/sendMessage?chat_id=${tgChatId}&text=${encodeURIComponent(msg)}`;
             
             try {
-                // ВАЖЛИВО: await гарантує, що повідомлення відправиться ДО появи alert
-                await fetch(tgUrl); 
+                // Надійний POST-запит замість GET
+                const response = await fetch(`https://api.telegram.org/bot${tgBotToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: tgChatId, text: msg })
+                });
+                
+                const data = await response.json();
+                
+                // ДЕТЕКТОР БРЕХНІ: Якщо Телеграм відмовляється, покажемо чому
+                if (!data.ok) {
+                    alert(`⚠️ Замовлення в базі збережено, але Телеграм ВІДХИЛИВ відправку!\nПричина: ${data.description}\n(Можливо помилка в Chat ID)`);
+                }
             } catch (err) {
                 console.error("Помилка Telegram:", err);
             }
