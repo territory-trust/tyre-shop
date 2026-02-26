@@ -297,12 +297,25 @@
         alert("Ціну оновлено!"); fetchData();
     }
 
+    // НОВИЙ, РОЗУМНИЙ АЛГОРИТМ ПІДРАХУНКУ ШТУК
     function getQty(str) {
         if (!str) return 1;
         const s = str.toLowerCase();
+        
+        // 1. Спочатку шукаємо точні слова-маркери
         if (s.includes('пара') || s.includes('2 шт')) return 2;
         if (s.includes('комплект') || s.includes('4 шт')) return 4;
-        const match = str.match(/\d+/);
+        if (s.includes('1 шт')) return 1;
+        if (s.includes('3 шт')) return 3;
+        
+        // 2. Якщо слів немає, ізолюємо останню частину рядка (щоб не захопити ширину шини 175)
+        let lastPart = s;
+        if (s.includes('|')) {
+            const arr = s.split('|');
+            lastPart = arr[arr.length - 1]; // Беремо тільки те, що після останнього "|"
+        }
+        
+        const match = lastPart.match(/\d+/);
         return match ? parseInt(match[0]) : 1;
     }
 
@@ -340,7 +353,7 @@
         let soldTiresCount = 0;
         const brands = {}; const sizes = {};
 
-        // 1. Рахуємо продажі з онлайн-замовлень (витягуємо кількість прямо з назви замовлення)
+        // 1. Рахуємо продажі з онлайн-замовлень
         ords.filter(o => o.status === 'Виконано').forEach(o => {
             soldSum += Number(o.price);
             const qty = getQty(o.product_title);
@@ -354,7 +367,7 @@
             sizes[size] = (sizes[size] || 0) + qty;
         });
 
-        // 2. Рахуємо офлайн-продажі (ті, що є в базі як продані, але без замовлення в системі)
+        // 2. Рахуємо офлайн-продажі 
         soldProds.forEach(p => { 
             if(!ords.find(o => o.product_id === p.id)) {
                 soldSum += Number(p.price); 
