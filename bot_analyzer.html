@@ -136,7 +136,8 @@
             addMsg(text || "Аналіз по фото", "user");
             document.getElementById("loader").style.display = "block";
             
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+            // ВЕРСИЯ ДВИГАТЕЛЯ ОБНОВЛЕНА ДО GEMINI 2.0 FLASH
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
             
             let contents = [];
             if (selectedBase64) {
@@ -158,6 +159,8 @@
                     chatHistory.push({ role: "model", parts: [{ text: aiText }] });
                     removePreview();
                     document.getElementById("user-text").value = "";
+                } else if (data.error) {
+                    addMsg("❌ Помилка API: " + data.error.message, "ai");
                 }
             } catch (e) { document.getElementById("loader").style.display = "none"; alert("Помилка зв'язку з ІІ"); }
         }
