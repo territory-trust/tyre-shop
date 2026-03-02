@@ -8,12 +8,12 @@
         :root { --bg: #0a0c10; --panel: #14171c; --olive: #8fbc55; --text: #e5e7eb; --border: #2a2e35; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; font-size: 16px; }
         
-        .nav-btn { display: block; width: 100%; padding: 15px; background: #1c2128; color: var(--olive); border: 1px solid var(--border); border-radius: 8px; text-align: center; text-decoration: none; font-weight: bold; margin-bottom: 20px; box-sizing: border-box; }
+        .nav-back { display: inline-block; color: var(--olive); text-decoration: none; font-size: 1.2em; font-weight: bold; margin-bottom: 25px; padding: 5px 0; }
         
         .api-box { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 20px; }
         .api-input-group { display: flex; gap: 10px; margin-top: 8px; }
-        .api-input-group input { flex-grow: 1; padding: 10px; border-radius: 8px; background: #000; color: #fff; border: 1px solid var(--border); outline: none; }
-        .api-input-group button { padding: 10px 15px; background: var(--border); color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+        .api-input-group input { flex-grow: 1; padding: 10px; border-radius: 8px; background: #000; color: #fff; border: 1px solid var(--olive); outline: none; }
+        .api-input-group button { padding: 10px 15px; background: var(--border); color: #fff; border: 1px solid var(--olive); border-radius: 8px; cursor: pointer; }
 
         .header { text-align: center; margin-bottom: 25px; }
         .header h2 { margin: 0; color: var(--olive); }
@@ -22,7 +22,7 @@
         .input-card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         
         .upload-btns { display: flex; gap: 10px; margin-bottom: 15px; }
-        .u-btn { flex: 1; padding: 12px; background: #1c2128; color: #fff; border: 1px solid var(--border); border-radius: 10px; text-align: center; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: 0.2s; }
+        .u-btn { flex: 1; padding: 12px; background: #1c2128; color: #fff; border: 1px solid var(--olive); border-radius: 10px; text-align: center; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: 0.2s; }
         .u-btn:active { background: #2a313c; }
         .u-btn input { display: none; }
         
@@ -30,27 +30,27 @@
         #preview-img { width: 100%; border-radius: 10px; border: 1px solid var(--olive); }
         .remove-img { position: absolute; top: 10px; right: 10px; background: rgba(255,0,0,0.8); color: #fff; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold; font-size: 18px; }
 
-        textarea { width: 100%; height: 100px; background: #000; color: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 12px; box-sizing: border-box; outline: none; font-size: 16px; margin-bottom: 10px; resize: none; }
-        textarea:focus { border-color: var(--olive); }
+        textarea { width: 100%; height: 100px; background: #000; color: #fff; border: 1px solid var(--olive); border-radius: 10px; padding: 12px; box-sizing: border-box; outline: none; font-size: 16px; margin-bottom: 10px; resize: none; }
+        textarea:focus { border-color: var(--olive); box-shadow: 0 0 5px rgba(143, 188, 85, 0.3); }
 
         .hint-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-        .hint-tag { background: #1c2128; border: 1px solid var(--border); color: #a0a5b0; padding: 8px 14px; border-radius: 20px; font-size: 0.85em; cursor: pointer; transition: all 0.2s ease; user-select: none; }
-        .hint-tag:active { background: var(--olive); color: #000; border-color: var(--olive); transform: scale(0.95); }
+        .hint-tag { background: #1c2128; border: 1px solid var(--olive); color: #e5e7eb; padding: 8px 14px; border-radius: 20px; font-size: 0.85em; cursor: pointer; transition: all 0.2s ease; user-select: none; }
+        .hint-tag:active { background: var(--olive); color: #000; transform: scale(0.95); }
 
-        .btn-main { width: 100%; padding: 16px; background: linear-gradient(145deg, #8fbc55, #759c44); color: #000; border: none; border-radius: 12px; font-weight: 900; font-size: 1.1em; cursor: pointer; box-shadow: 0 4px 0 #283315; }
-        .btn-main:active { transform: translateY(2px); box-shadow: none; }
+        .btn-main { width: 100%; padding: 16px; background: linear-gradient(180deg, #9ac95c 0%, #759c44 100%); color: #0a0c10; border: 1px solid #5a7a33; border-radius: 10px; font-weight: 900; font-size: 1.1em; cursor: pointer; box-shadow: inset 0 2px 3px rgba(255,255,255,0.4), inset 0 -3px 5px rgba(0,0,0,0.2), 0 6px 15px rgba(0,0,0,0.5); transition: all 0.15s ease; }
+        .btn-main:active { box-shadow: inset 0 4px 8px rgba(0,0,0,0.5); transform: translateY(3px); }
 
         #chat { margin-top: 25px; }
         .msg { padding: 15px; border-radius: 12px; margin-bottom: 15px; line-height: 1.5; }
         .msg.ai { background: var(--panel); border: 1px solid var(--border); border-left: 4px solid var(--olive); }
-        .msg.user { background: #1c2128; border: 1px solid var(--border); color: #fff; text-align: right; }
+        .msg.user { background: #1c2128; border: 1px solid var(--olive); color: #fff; text-align: right; }
         
         .loader { display: none; text-align: center; color: var(--olive); font-weight: bold; padding: 20px; }
     </style>
 </head>
 <body>
 
-    <a href="ai_hub.html" class="nav-btn">🔙 Повернутися до AI-Помічників</a>
+    <a href="ai_hub.html" class="nav-back">⬅ Назад</a>
 
     <div class="api-box">
         <label style="font-size: 0.8em; color: #888;">🔑 Gemini API Key:</label>
@@ -173,6 +173,7 @@
             div.className = "msg " + s;
             div.innerHTML = t;
             document.getElementById("chat").prepend(div);
+            window.scrollTo(0, document.body.scrollHeight);
         }
     </script>
 </body>
