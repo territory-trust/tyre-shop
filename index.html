@@ -20,6 +20,7 @@
         .nav-scroll { overflow-x: auto; white-space: nowrap; padding: 10px 15px 0; }
         .cat-btn { background: var(--panel); color: #aaa; border: 1px solid #333; padding: 8px 18px; border-radius: 20px; margin-right: 5px; font-size: 14px; cursor: pointer; font-weight: 500;}
         .cat-btn.active { background: var(--olive); color: #000; font-weight: bold; border-color: var(--olive); }
+        .ai-nav-btn { background: #1c2128; color: var(--olive); border: 1px solid var(--olive); padding: 8px 18px; border-radius: 20px; margin-right: 5px; font-size: 14px; text-decoration: none; font-weight: bold; display: inline-block; }
         
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px; max-width: 900px; margin: auto; }
         @media (min-width: 600px) { .grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
@@ -71,6 +72,7 @@
     </div>
     <input type="text" id="search" class="search-box" placeholder="🔍 Пошук: розмір, бренд, сезон..." oninput="filter()">
     <div class="nav-scroll">
+        <a href="ai_hub.html" class="ai-nav-btn">🤖 AI-Помічники</a>
         <button class="cat-btn active" onclick="setCat('Все', this)">Всі</button>
         <button class="cat-btn" onclick="setCat('R14', this)">R14</button>
         <button class="cat-btn" onclick="setCat('R15', this)">R15</button>
@@ -98,6 +100,7 @@
         <div class="desc-content" id="desc-modal-body"></div>
         
         <button class="btn-buy" id="desc-modal-order-btn" style="margin-bottom: 12px; font-size: 16px;">🛒 ЗАМОВИТИ ЦЮ ШИНУ</button>
+        <a href="ai_hub.html" class="btn-buy" style="display: block; background: #1c2128; border: 1px solid var(--olive); color: var(--olive); text-decoration: none; text-align: center; margin-bottom: 12px; box-shadow: none; font-size: 16px; box-sizing: border-box;">🤖 Запитати AI-Помічника</a>
         <button class="btn-buy" style="background:transparent; border:1px solid #555; box-shadow:none; color:#aaa;" onclick="closeDesc()">🔙 Назад в магазин</button>
     </div>
 </div>
