@@ -52,42 +52,46 @@
             line-height: 1.5; 
             margin-bottom: 20px;
         }
+        /* Нові об'ємні кнопки */
         .btn { 
             display: block; 
             width: 100%; 
-            padding: 15px; 
-            background: linear-gradient(145deg, #8fbc55, #759c44); 
+            padding: 16px; 
+            background: linear-gradient(180deg, #9ac95c 0%, #759c44 100%); 
             color: #0a0c10; 
             font-weight: 900; 
             text-align: center; 
             text-decoration: none; 
-            border-radius: 8px; 
-            border: none; 
-            box-shadow: inset 0 2px 0 rgba(255,255,255,0.2), 0 4px 6px rgba(0,0,0,0.3); 
+            border-radius: 10px; 
+            border: 1px solid #5a7a33; 
+            box-shadow: inset 0 2px 3px rgba(255,255,255,0.4), inset 0 -3px 5px rgba(0,0,0,0.2), 0 6px 15px rgba(0,0,0,0.5); 
             font-size: 1.1em; 
             cursor: pointer; 
             box-sizing: border-box;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
         }
         .btn:active { 
-            box-shadow: inset 0 3px 6px rgba(0,0,0,0.4); 
-            transform: translateY(2px); 
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.5); 
+            transform: translateY(3px); 
         }
-        .nav-btn { 
-            background: #1c2128; 
+        /* Нова кнопка "Назад" */
+        .nav-back { 
+            display: inline-block;
             color: #8fbc55; 
-            border: 1px solid #2a2e35; 
+            text-decoration: none; 
+            font-size: 1.2em; 
+            font-weight: bold; 
             margin-bottom: 25px;
-            font-weight: bold;
+            padding: 5px 0;
         }
     </style>
 </head>
 <body>
 
-    <a href="index.html" class="btn nav-btn">🔙 Повернутися в магазин</a>
+    <a href="index.html" class="nav-back">⬅ Назад в магазин</a>
 
     <div class="header">
-        <h2>🤖 AI-Помічники</h2>
+        <h2>AI-Помічники</h2>
         <p>Оберіть спеціаліста для вашого завдання</p>
     </div>
 
