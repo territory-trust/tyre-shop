@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI-Механік (Автоексперт)</title>
+    <style>
+        :root { --bg: #0a0c10; --panel: #14171c; --olive: #8fbc55; --text: #e5e7eb; --border: #2a2e35; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; font-size: 16px; }
+        
+        .nav-btn { display: block; width: 100%; padding: 15px; background: #1c2128; color: var(--olive); border: 1px solid var(--border); border-radius: 8px; text-align: center; text-decoration: none; font-weight: bold; margin-bottom: 20px; box-sizing: border-box; }
+        
+        .api-box { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 20px; }
+        .api-input-group { display: flex; gap: 10px; margin-top: 8px; }
+        .api-input-group input { flex-grow: 1; padding: 10px; border-radius: 8px; background: #000; color: #fff; border: 1px solid var(--border); outline: none; }
+        .api-input-group button { padding: 10px 15px; background: var(--border); color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h2 { margin: 0; color: var(--olive); }
+        .header p { color: #aaa; font-size: 0.95em; line-height: 1.4; }
+
+        .input-card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        .upload-btns { display: flex; gap: 10px; margin-bottom: 15px; }
+        .u-btn { flex: 1; padding: 12px; background: #1c2128; color: #fff; border: 1px solid var(--border); border-radius: 10px; text-align: center; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: 0.2s; }
+        .u-btn:active { background: #2a313c; }
+        .u-btn input { display: none; }
+        
+        #preview-container { display: none; margin-bottom: 15px; position: relative; }
+        #preview-img { width: 100%; border-radius: 10px; border: 1px solid var(--olive); }
+        .remove-img { position: absolute; top: 10px; right: 10px; background: rgba(255,0,0,0.8); color: #fff; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold; font-size: 18px; }
+
+        textarea { width: 100%; height: 100px; background: #000; color: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 12px; box-sizing: border-box; outline: none; font-size: 16px; margin-bottom: 10px; resize: none; }
+        textarea:focus { border-color: var(--olive); }
+
+        .hint-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .hint-tag { background: #1c2128; border: 1px solid var(--border); color: #a0a5b0; padding: 8px 14px; border-radius: 20px; font-size: 0.85em; cursor: pointer; transition: all 0.2s ease; user-select: none; }
+        .hint-tag:active { background: var(--olive); color: #000; border-color: var(--olive); transform: scale(0.95); }
+
+        .btn-main { width: 100%; padding: 16px; background: linear-gradient(145deg, #8fbc55, #759c44); color: #000; border: none; border-radius: 12px; font-weight: 900; font-size: 1.1em; cursor: pointer; box-shadow: 0 4px 0 #283315; }
+        .btn-main:active { transform: translateY(2px); box-shadow: none; }
+
+        #chat { margin-top: 25px; }
+        .msg { padding: 15px; border-radius: 12px; margin-bottom: 15px; line-height: 1.5; }
+        .msg.ai { background: var(--panel); border: 1px solid var(--border); border-left: 4px solid var(--olive); }
+        .msg.user { background: #1c2128; border: 1px solid var(--border); color: #fff; text-align: right; }
+        
+        .loader { display: none; text-align: center; color: var(--olive); font-weight: bold; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <a href="ai_hub.html" class="nav-btn">🔙 Повернутися до AI-Помічників</a>
+
+    <div class="api-box">
+        <label style="font-size: 0.8em; color: #888;">🔑 Gemini API Key:</label>
+        <div class="api-input-group">
+            <input type="password" id="gemini-key" placeholder="Вставте ключ...">
+            <button onclick="saveKey()">OK</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <h2>🛠 AI-Механік</h2>
+        <p>Завантажте фото несправності або деталі. Я допоможу визначити проблему, пораджу запчастини та оціню критичність ситуації.</p>
+    </div>
+
+    <div class="input-card">
+        <div class="upload-btns">
+            <label class="u-btn">📷 Камера <input type="file" accept="image/*" capture="environment" onchange="preview(this)"></label>
+            <label class="u-btn">📁 Галерея <input type="file" accept="image/*" onchange="preview(this)"></label>
+        </div>
+
+        <div id="preview-container">
+            <button class="remove-img" onclick="removePreview()">×</button>
+            <img id="preview-img" src="">
+        </div>
+
+        <textarea id="user-text" placeholder="Опишіть проблему або оберіть швидке питання..."></textarea>
+        
+        <div class="hint-tags">
+            <span class="hint-tag" onclick="useHint(this)">Що це за деталь на фото?</span>
+            <span class="hint-tag" onclick="useHint(this)">Які причини такого зносу шини?</span>
+            <span class="hint-tag" onclick="useHint(this)">Стукає в підвісці на ямах, що може бути?</span>
+            <span class="hint-tag" onclick="useHint(this)">Чи безпечно їздити з такою проблемою?</span>
+        </div>
+        
+        <button class="btn-main" onclick="startAnalysis()">🛠 АНАЛІЗУВАТИ ПРОБЛЕМУ</button>
+    </div>
+
+    <div class="loader" id="loader">⏳ Механік оглядає авто...</div>
+    <div id="chat"></div>
+
+    <script>
+        let selectedBase64 = null;
+        let chatHistory = [];
+        const PROMPT = "Ти - досвідчений автомеханік та експерт з шин. Твоя мета: допомогти водієві розібратися з проблемою автомобіля або станом запчастин. Проаналізуй фото (якщо є) та текст запиту. Визнач можливу несправність, порадь, що робити далі, та обов'язково попередь про небезпеку, якщо поломка критична. Відповідай українською мовою. Пояснюй зрозуміло для звичайного водія, без зайвої складної термінології.";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedKey = localStorage.getItem("ai_pilot_gemini_key");
+            if (savedKey) document.getElementById("gemini-key").value = savedKey;
+        });
+
+        function saveKey() {
+            localStorage.setItem("ai_pilot_gemini_key", document.getElementById("gemini-key").value.trim());
+            alert("✅ Ключ збережено");
+        }
+
+        function useHint(element) {
+            document.getElementById("user-text").value = element.innerText;
+        }
+
+        function preview(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedBase64 = e.target.result.split(",")[1];
+                    document.getElementById("preview-img").src = e.target.result;
+                    document.getElementById("preview-container").style.display = "block";
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function removePreview() {
+            selectedBase64 = null;
+            document.getElementById("preview-container").style.display = "none";
+            document.getElementById("preview-img").src = "";
+        }
+
+        async function startAnalysis() {
+            const key = localStorage.getItem("ai_pilot_gemini_key");
+            const text = document.getElementById("user-text").value.trim();
+            if (!key) return alert("Вставте API ключ!");
+            if (!text && !selectedBase64) return alert("Додайте фото або напишіть питання!");
+
+            addMsg(text || "Огляд проблеми", "user");
+            document.getElementById("loader").style.display = "block";
+            
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+            
+            let contents = [];
+            if (selectedBase64) {
+                contents = [{ role: "user", parts: [{ text: text || "Що ти бачиш на цьому фото? Яка це проблема?" }, { inline_data: { mime_type: "image/jpeg", data: selectedBase64 } }] }];
+                chatHistory = [...contents];
+            } else {
+                chatHistory.push({ role: "user", parts: [{ text: text }] });
+                contents = chatHistory;
+            }
+
+            try {
+                const resp = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) });
+                const data = await resp.json();
+                document.getElementById("loader").style.display = "none";
+
+                if (data.candidates) {
+                    const aiText = data.candidates[0].content.parts[0].text;
+                    addMsg(aiText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'), "ai");
+                    chatHistory.push({ role: "model", parts: [{ text: aiText }] });
+                    removePreview();
+                    document.getElementById("user-text").value = "";
+                } else if (data.error) {
+                    addMsg("❌ Помилка API: " + data.error.message, "ai");
+                }
+            } catch (e) { 
+                document.getElementById("loader").style.display = "none"; 
+                alert("Помилка зв'язку з ІІ"); 
+            }
+        }
+
+        function addMsg(t, s) {
+            const div = document.createElement("div");
+            div.className = "msg " + s;
+            div.innerHTML = t;
+            document.getElementById("chat").prepend(div);
+        }
+    </script>
+</body>
+</html>
