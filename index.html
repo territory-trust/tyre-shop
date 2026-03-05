@@ -12,15 +12,36 @@
         
         .sticky-header { position: fixed; top: 0; left: 0; width: 100%; background: rgba(10, 12, 16, 0.95); z-index: 100; border-bottom: 1px solid #333; backdrop-filter: blur(8px); padding-bottom: 10px; }
         .header-content { padding: 10px 15px; max-width: 900px; margin: auto; display: flex; justify-content: space-between; align-items: center;}
-        .logo { color: var(--olive); font-size: 22px; font-weight: 900; letter-spacing: 1px;}
+        .logo { color: var(--olive); font-size: 20px; font-weight: 900; letter-spacing: 1px;}
         .search-box { width: calc(100% - 30px); margin: 0 15px; padding: 14px; border-radius: 10px; background: #000; color: #fff; border: 1px solid var(--olive); outline: none; box-sizing: border-box; font-size: 15px;}
         
+        /* Кнопки в шапке */
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+
+        /* Кнопка админа */
         #admin-btn { display: none; background: #222; color: var(--olive); border: 1px solid var(--olive); padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px;}
         
+        /* Кнопки для покупателя */
+        #customer-btns { display: flex; gap: 8px; }
+        .head-btn { 
+            background: #1c2128; 
+            color: var(--olive); 
+            border: 1px solid var(--olive); 
+            padding: 8px 12px; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 12px; 
+            box-shadow: 0 4px 0 #111;
+            transition: transform 0.1s;
+            white-space: nowrap;
+        }
+        .head-btn:active { transform: translateY(2px); box-shadow: none; }
+        .head-btn.smart { border-color: #fff; color: #fff; } /* SmartMarket чуть выделяем белым, или оставь olive */
+
         .nav-scroll { overflow-x: auto; white-space: nowrap; padding: 10px 15px 0; }
         .cat-btn { background: var(--panel); color: #aaa; border: 1px solid #333; padding: 8px 18px; border-radius: 20px; margin-right: 5px; font-size: 14px; cursor: pointer; font-weight: 500;}
         .cat-btn.active { background: var(--olive); color: #000; font-weight: bold; border-color: var(--olive); }
-        .ai-nav-btn { background: #1c2128; color: var(--olive); border: 1px solid var(--olive); padding: 8px 18px; border-radius: 20px; margin-right: 5px; font-size: 14px; text-decoration: none; font-weight: bold; display: inline-block; }
         
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px; max-width: 900px; margin: auto; }
         @media (min-width: 600px) { .grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
@@ -68,11 +89,20 @@
 <div class="sticky-header">
     <div class="header-content">
         <div class="logo">TYRE SHOP</div>
-        <a href="dashboard.html" id="admin-btn">🔑 В Кабінет</a>
+        
+        <div class="header-actions">
+            <a href="dashboard.html" id="admin-btn">🔑 В Кабінет</a>
+
+            <div id="customer-btns" style="display:flex; gap:8px;">
+                <a href="ai_hub.html" class="head-btn">ІІ-Помічник</a>
+                <a href="https://ai-pilot.com.ua/" class="head-btn smart">SmartMarket</a>
+            </div>
+        </div>
     </div>
+    
     <input type="text" id="search" class="search-box" placeholder="🔍 Пошук: розмір, бренд, сезон..." oninput="filter()">
+    
     <div class="nav-scroll">
-        <a href="ai_hub.html" class="ai-nav-btn">🤖 AI-Помічники</a>
         <button class="cat-btn active" onclick="setCat('Все', this)">Всі</button>
         <button class="cat-btn" onclick="setCat('R14', this)">R14</button>
         <button class="cat-btn" onclick="setCat('R15', this)">R15</button>
@@ -138,7 +168,16 @@
     let items = []; let galImgs = []; let galIdx = 0; let activeOrderProduct = null;
 
     window.onload = () => {
-        if(localStorage.getItem('is_admin') === 'true') document.getElementById('admin-btn').style.display = 'block';
+        // Логика отображения кнопок в шапке
+        const isAdmin = localStorage.getItem('is_admin') === 'true';
+        if (isAdmin) {
+            document.getElementById('admin-btn').style.display = 'block';
+            document.getElementById('customer-btns').style.display = 'none';
+        } else {
+            document.getElementById('admin-btn').style.display = 'none';
+            document.getElementById('customer-btns').style.display = 'flex';
+        }
+        
         load();
     };
 
